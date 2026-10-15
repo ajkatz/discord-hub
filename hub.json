@@ -22,6 +22,48 @@
       "emoji": "🐿️",
       "repo": "AKAddons/runelite-trappy-chinchompa",
       "emojiId": "1560161958349774918"
+    },
+    {
+      "slug": "forever-bags",
+      "name": "Forever Bags",
+      "emoji": "🎒",
+      "repo": "ajkatz/AKForeverBags"
+    },
+    {
+      "slug": "forever-chat-filter",
+      "name": "Forever Chat Filter",
+      "emoji": "💬",
+      "repo": "ajkatz/AKForeverChatFilter"
+    },
+    {
+      "slug": "forever-combat-timers",
+      "name": "Forever Combat Timers",
+      "emoji": "⏱️",
+      "repo": "ajkatz/AKForeverCombatTimers"
+    },
+    {
+      "slug": "forever-nice-warstomp",
+      "name": "Forever Nice Warstomp",
+      "emoji": "🐂",
+      "repo": "ajkatz/AKForeverNiceWarstomp"
+    },
+    {
+      "slug": "forever-targeter",
+      "name": "Forever Targeter",
+      "emoji": "🎯",
+      "repo": "ajkatz/AKForeverTargeter"
+    },
+    {
+      "slug": "forever-tooltip",
+      "name": "Forever Tooltip",
+      "emoji": "🏷️",
+      "repo": "ajkatz/AKForeverTooltip"
+    },
+    {
+      "slug": "forever-weapon-buffs",
+      "name": "Forever Weapon Buffs",
+      "emoji": "⚔️",
+      "repo": "ajkatz/AKForeverWeaponBuffs"
     }
   ]
 }
