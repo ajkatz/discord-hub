@@ -33,6 +33,7 @@ node bin/discord-hub.mjs new loadout-lab --name "Loadout Lab" --emoji 🧪 --rep
 node bin/discord-hub.mjs plan                                    # diff only
 node bin/discord-hub.mjs apply                                   # reconcile everything in hub.json
 node bin/discord-hub.mjs archive loadout-lab                     # drop from onboarding, rename category
+node bin/discord-hub.mjs apply --no-onboarding                   # build projects behind the wall; add the prompt later
 node bin/discord-hub.mjs plan --snapshot tests/fixtures/empty.json --hub tests/fixtures/hub.json   # offline
 ```
 

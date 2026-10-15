@@ -19,6 +19,7 @@ options
   --snapshot <file>          read guild state from a JSON snapshot instead of Discord (dry run)
   --dry-run                  print the plan without applying
   --shared                   plan/apply: include the seven shared top-level channels
+  --no-onboarding            leave the onboarding prompt alone (keeps new projects behind the wall)
 
 env
   DISCORD_BOT_TOKEN          bot token, required for every live command (never stored)
@@ -32,13 +33,14 @@ interface Args {
   snapshot?: string;
   dryRun: boolean;
   shared: boolean;
+  noOnboarding: boolean;
   name?: string;
   emoji?: string;
   repo?: string;
 }
 
 export function parseArgs(argv: string[]): Args {
-  const args: Args = { command: undefined, positional: [], hub: 'hub.json', dryRun: false, shared: false };
+  const args: Args = { command: undefined, positional: [], hub: 'hub.json', dryRun: false, shared: false, noOnboarding: false };
   const takeValue = (flag: string, i: number): string => {
     const v = argv[i + 1];
     if (v === undefined || v.startsWith('--')) throw new UsageError(`${flag} needs a value`);
@@ -54,6 +56,7 @@ export function parseArgs(argv: string[]): Args {
       case '--repo': args.repo = takeValue(a, i++); break;
       case '--dry-run': args.dryRun = true; break;
       case '--shared': args.shared = true; break;
+      case '--no-onboarding': args.noOnboarding = true; break;
       case '--help': case '-h': throw new UsageError('');
       default:
         if (a.startsWith('--')) throw new UsageError(`unknown option ${a}`);
@@ -166,7 +169,7 @@ export async function main(argv: string[], io = { out: console.log, err: console
     }
 
     const snapshot = await api.snapshot(hub.guildId);
-    const ops = plan(hub, snapshot, { shared });
+    const ops = plan(hub, snapshot, { shared }).filter((op) => !(args.noOnboarding && op.kind === 'upsert-onboarding'));
     io.out(dryRun ? `plan (dry-run, ${ops.length} operation(s)):` : `applying ${ops.length} operation(s):`);
     printOps(ops, io.out);
 

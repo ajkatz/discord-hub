@@ -25,6 +25,13 @@ describe('discord-hub plan', () => {
     expect(r.out).toMatch(/update onboarding prompt/);
   });
 
+  it('holds back the onboarding prompt with --no-onboarding', () => {
+    const r = run(['plan', '--hub', HUB, '--snapshot', SNAP, '--no-onboarding']);
+    expect(r.code).toBe(0);
+    expect(r.out).not.toMatch(/update onboarding prompt/);
+    expect(r.out.split('\n').filter((l) => /^\s*\d+\. /.test(l))).toHaveLength(7);
+  });
+
   it('includes the shared channels with --shared', () => {
     const r = run(['plan', '--hub', HUB, '--snapshot', SNAP, '--shared']);
     expect(r.code).toBe(0);

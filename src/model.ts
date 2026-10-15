@@ -145,6 +145,8 @@ export interface SnapPrompt {
 export interface SnapOnboarding { enabled: boolean; prompts: SnapPrompt[] }
 export interface GuildSnapshot {
   guildId: string;
+  /** The bot's own user id; it gets a member overwrite on everything it creates so it can see inside private categories. */
+  botId?: string;
   roles: SnapRole[];
   channels: SnapChannel[];
   webhooks: SnapWebhook[];

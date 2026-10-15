@@ -5,6 +5,7 @@ import {
   type APIGuildForumChannel,
   type APIGuildOnboarding,
   type APIRole,
+  type APIUser,
   type APIWebhook,
 } from 'discord-api-types/v10';
 import type { GuildSnapshot, SnapOnboarding } from './model.js';
@@ -14,6 +15,11 @@ export const VIEW_CHANNEL = 1n << 10n;
 export const SEND_MESSAGES = 1n << 11n;
 export const CREATE_PUBLIC_THREADS = 1n << 35n;
 export const SEND_MESSAGES_IN_THREADS = 1n << 38n;
+export const READ_MESSAGE_HISTORY = 1n << 16n;
+export const MANAGE_WEBHOOKS = 1n << 29n;
+export const MANAGE_THREADS = 1n << 34n;
+/** What the bot grants itself on every category and child it creates. */
+export const BOT_PERMS = VIEW_CHANNEL | SEND_MESSAGES | SEND_MESSAGES_IN_THREADS | CREATE_PUBLIC_THREADS | READ_MESSAGE_HISTORY | MANAGE_WEBHOOKS | MANAGE_THREADS;
 
 export interface Overwrite {
   id: string;
@@ -77,7 +83,8 @@ export class RestDiscordApi implements DiscordApi {
   }
 
   async snapshot(guildId: string): Promise<GuildSnapshot> {
-    const [roles, channels, webhooks, onboarding] = await Promise.all([
+    const [me, roles, channels, webhooks, onboarding] = await Promise.all([
+      this.rest.get(Routes.user('@me')) as Promise<APIUser>,
       this.rest.get(Routes.guildRoles(guildId)) as Promise<APIRole[]>,
       this.rest.get(Routes.guildChannels(guildId)) as Promise<APIChannel[]>,
       this.rest.get(Routes.guildWebhooks(guildId)) as Promise<APIWebhook[]>,
@@ -85,6 +92,7 @@ export class RestDiscordApi implements DiscordApi {
     ]);
     return {
       guildId,
+      botId: me.id,
       roles: roles.map((r) => ({ id: r.id, name: r.name })),
       channels: channels.map((c) => {
         const forum = c as APIGuildForumChannel;

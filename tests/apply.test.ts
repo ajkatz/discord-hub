@@ -50,6 +50,18 @@ describe('apply against an empty fake guild', () => {
     expect(api.overwrites(gen.id).find((o) => o.id === GUILD)).toMatchObject({ deny: VIEW_CHANNEL.toString() });
   });
 
+  it('grants the bot itself access on the category and every child', async () => {
+    const { api } = await provision();
+    const snap = await api.snapshot(GUILD);
+    const cat = snap.channels.find((c) => c.type === 4)!;
+    for (const ch of [cat, ...snap.channels.filter((c) => c.parentId === cat.id)]) {
+      const mine = api.overwrites(ch.id).find((o) => o.id === api.botId);
+      expect(mine, ch.name).toMatchObject({ type: 1 });
+      expect(BigInt(mine!.allow) & VIEW_CHANNEL).toBe(VIEW_CHANNEL);
+      expect(BigInt(mine!.allow) & SEND_MESSAGES).toBe(SEND_MESSAGES);
+    }
+  });
+
   it('returns the webhook url once and never persists it', async () => {
     const { api, result } = await provision();
     expect(result.webhooks).toHaveLength(1);

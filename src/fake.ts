@@ -45,9 +45,12 @@ export class FakeDiscordApi implements DiscordApi {
     this.mutations.push(method);
   }
 
+  readonly botId = '999000000000000000';
+
   async snapshot(guildId: string): Promise<GuildSnapshot> {
     return {
       guildId,
+      botId: this.botId,
       roles: this.roles.map((r) => ({ ...r })),
       channels: this.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined })),
       webhooks: this.webhooks.map(({ id, channelId, name }) => ({ id, channelId, name })),

@@ -1,0 +1,8 @@
+{
+  "guildId": "1524847121562468514",
+  "onboardingPrompt": "Which plugins do you use?",
+  "projects": [
+    { "slug": "loadout-lab", "name": "Loadout Lab", "emoji": "🧪", "repo": "ajkatz/runelite-loadout-lab" },
+    { "slug": "goal-planner", "name": "Goal Planner", "emoji": "🎯", "repo": "ajkatz/runelite-goal-planner" }
+  ]
+}

@@ -83,6 +83,14 @@
  ],
  "nodes": [
   {
+   "id": "F-01M4YSPEQSEHZREY1K1006BK1A",
+   "kind": "finding",
+   "title": "done actuals miss untracked directories \u2014 actual_files 0 on a 15-file greenfield issue",
+   "status": "active",
+   "sourceLocation": "mural/findings/F-01M4YSPEQSEHZREY1K1006BK1A-done-actuals-miss-untracked-directories.md",
+   "writes": []
+  },
+  {
    "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5",
    "kind": "issue",
    "title": "model + planner \u2014 hub.json truth, pure diff against a guild snapshot",

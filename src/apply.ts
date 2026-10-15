@@ -1,4 +1,5 @@
 import {
+  BOT_PERMS,
   CREATE_PUBLIC_THREADS,
   SEND_MESSAGES,
   SEND_MESSAGES_IN_THREADS,
@@ -58,20 +59,28 @@ class Resolver {
   addChild(categoryId: string, name: string, id: string) { this.children.set(`${categoryId}/${name.toLowerCase()}`, id); }
 }
 
-function categoryOverwrites(everyoneId: string, roleId: string): Overwrite[] {
+/** The bot must grant itself access: a category that hides @everyone hides the bot too,
+ *  and Discord then refuses to let it create or edit anything inside (50001/50013). */
+function botOverwrite(botId: string | undefined): Overwrite[] {
+  return botId ? [{ id: botId, type: 1, allow: bits(BOT_PERMS), deny: '0' }] : [];
+}
+
+function categoryOverwrites(everyoneId: string, roleId: string, botId: string | undefined): Overwrite[] {
   return [
     { id: everyoneId, type: 0, allow: '0', deny: bits(VIEW_CHANNEL) },
     { id: roleId, type: 0, allow: bits(VIEW_CHANNEL), deny: '0' },
+    ...botOverwrite(botId),
   ];
 }
 
-function childOverwrites(everyoneId: string, roleId: string, roleCanPost: boolean): Overwrite[] {
+function childOverwrites(everyoneId: string, roleId: string, roleCanPost: boolean, botId: string | undefined): Overwrite[] {
   const post = [SEND_MESSAGES, CREATE_PUBLIC_THREADS, SEND_MESSAGES_IN_THREADS];
   return [
     { id: everyoneId, type: 0, allow: '0', deny: bits(VIEW_CHANNEL) },
     roleCanPost
       ? { id: roleId, type: 0, allow: bits(VIEW_CHANNEL, ...post), deny: '0' }
       : { id: roleId, type: 0, allow: bits(VIEW_CHANNEL), deny: bits(SEND_MESSAGES, CREATE_PUBLIC_THREADS) },
+    ...botOverwrite(botId),
   ];
 }
 
@@ -95,7 +104,7 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
         }
         case 'create-category': {
           const roleId = res.role(op.role);
-          const { id } = await api.createChannel(guildId, { name: op.name, type: CATEGORY, permission_overwrites: categoryOverwrites(everyoneId, roleId) });
+          const { id } = await api.createChannel(guildId, { name: op.name, type: CATEGORY, permission_overwrites: categoryOverwrites(everyoneId, roleId, snapshot.botId) });
           res.addCategory(op.name, id);
           break;
         }
@@ -106,7 +115,7 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
             name: op.name,
             type: op.type === 'forum' ? FORUM : TEXT,
             parent_id: parentId,
-            permission_overwrites: childOverwrites(everyoneId, roleId, op.roleCanPost),
+            permission_overwrites: childOverwrites(everyoneId, roleId, op.roleCanPost, snapshot.botId),
             ...(op.type === 'forum' ? { available_tags: op.tags.map((name) => ({ name })) } : {}),
           });
           res.addChild(parentId, op.name, id);
