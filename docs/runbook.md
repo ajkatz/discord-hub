@@ -51,6 +51,12 @@ as the `DISCORD_WEBHOOK_URL` Actions secret, add `ANTHROPIC_API_KEY`, and copy
 with `project_name` set (it passes the two secrets by name; `secrets: inherit` fails
 from an org-owned repo). Every push to `main` then posts a summary to `#announcements`.
 
+A push that went unannounced (a broken secret, a failed run) is replayed by hand:
+Actions -> "Announce pushes to Discord" -> Run workflow, `from` = the last commit or tag
+that was announced, `to` empty for the branch head. The post is built from git history
+and looks exactly like the one the push would have made; a range that only touches
+`.github/` posts nothing.
+
 Re-running `new`, `apply` or `init` is safe: only what is missing gets created.
 `plan` always shows the diff first. `archive <slug>` removes the onboarding option and
 prefixes the category with `[archived]`; nothing is deleted.

@@ -50,7 +50,8 @@ Adding projects from another machine: [docs/handoff-wow.md](docs/handoff-wow.md)
 
 `.github/workflows/announce.yml` is a reusable workflow (Loadout Lab's push announcer,
 generalized). Each project repo copies [templates/discord-announce.yml](templates/discord-announce.yml)
-and sets the `DISCORD_WEBHOOK_URL` and `ANTHROPIC_API_KEY` secrets.
+and sets the `DISCORD_WEBHOOK_URL` and `ANTHROPIC_API_KEY` secrets. A missed push is
+replayed from the Actions tab with a from/to range (runbook §3).
 
 ## Contracts
 

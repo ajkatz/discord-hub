@@ -21,6 +21,16 @@ on:
         type: string
         required: false
         default: main
+      replay_from:
+        description: "Make-up run - announce the commits after this ref (sha or tag); empty on a push"
+        type: string
+        required: false
+        default: ""
+      replay_to:
+        description: "Make-up run - up to this ref (default the branch head)"
+        type: string
+        required: false
+        default: ""
     secrets:
       DISCORD_WEBHOOK_URL:
         description: "Channel webhook URL printed by discord-hub new"
@@ -35,7 +45,8 @@ permissions:
 jobs:
   announce:
     runs-on: ubuntu-latest
-    if: ${{ github.event.head_commit != null }}
+    # A push with commits, or a make-up run with a range.
+    if: ${{ github.event.head_commit != null || inputs.replay_from != '' }}
     steps:
       - name: Check out the project (full history, for the feature-registry diff)
         uses: actions/checkout@v4
@@ -66,4 +77,6 @@ jobs:
           ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
           PROJECT_NAME: ${{ inputs.project_name }}
           PROJECT_DESCRIPTION: ${{ inputs.project_description }}
+          REPLAY_FROM: ${{ inputs.replay_from }}
+          REPLAY_TO: ${{ inputs.replay_to }}
         run: node announce.mjs

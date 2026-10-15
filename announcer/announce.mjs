@@ -14,6 +14,8 @@
 //   GITHUB_WORKSPACE     (set by Actions)     repo root (for git commands)
 //   PROJECT_NAME         (optional)           display name; default: repo name
 //   PROJECT_DESCRIPTION  (optional)           one line about the project for the summary
+//   REPLAY_FROM          (optional)           make-up run: announce the commits after this ref
+//   REPLAY_TO            (optional)           ...up to this ref (default HEAD); needs REPLAY_FROM
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -37,9 +39,54 @@ if (!WEBHOOK) {
 }
 
 // ---------------------------------------------------------------------------
-// Load the push event GitHub handed us.
+// Load the push event GitHub handed us - or, for a make-up run, rebuild one
+// from git history so everything below runs unchanged.
 // ---------------------------------------------------------------------------
-const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+function git(...args) {
+  return execFileSync("git", args, {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+}
+
+// A missed push (Loadout Lab 0.5.4, 2026-10-15: the announce failed and a rerun
+// replays the broken workflow) is announced by hand with a from/to range. The
+// payload takes the shape a push delivers: commits oldest -> newest with their
+// files, before/after, the compare link, the dispatcher as pusher.
+function replayEvent(base, fromRef, toRef) {
+  const before = git("rev-parse", `${fromRef}^{commit}`);
+  const after = git("rev-parse", `${toRef}^{commit}`);
+  const html = base.repository?.html_url ?? "";
+  const shas = git("rev-list", "--reverse", `${before}..${after}`).split("\n").filter(Boolean);
+  const commits = shas.map((sha) => {
+    const [name, timestamp, ...body] = git("show", "-s", "--format=%an%n%aI%n%B", sha).split("\n");
+    const added = [], modified = [], removed = [];
+    for (const line of git("show", "--name-status", "--format=", sha).split("\n")) {
+      const parts = line.split("\t");
+      const path = parts[parts.length - 1];
+      if (parts.length < 2 || !path) continue;
+      (parts[0].startsWith("A") ? added : parts[0].startsWith("D") ? removed : modified).push(path);
+    }
+    return { id: sha, message: body.join("\n").trim(), url: `${html}/commit/${sha}`,
+      author: { name }, timestamp, added, modified, removed };
+  });
+  log(`Replaying ${before.slice(0, 7)}..${after.slice(0, 7)} (${commits.length} commit(s)).`);
+  return {
+    ...base,
+    ref: base.ref ?? "refs/heads/main",
+    before,
+    after,
+    compare: `${html}/compare/${before.slice(0, 12)}...${after.slice(0, 12)}`,
+    pusher: { name: base.sender?.login ?? "someone" },
+    head_commit: commits[commits.length - 1] ?? null,
+    commits,
+  };
+}
+
+const rawEvent = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+const REPLAY_FROM = process.env.REPLAY_FROM || "";
+const event = REPLAY_FROM ? replayEvent(rawEvent, REPLAY_FROM, process.env.REPLAY_TO || "HEAD") : rawEvent;
 
 const repoFullName = event.repository?.full_name ?? "unknown/repo";
 const repoName = event.repository?.name ?? repoFullName;

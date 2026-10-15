@@ -6,6 +6,19 @@ name: Announce pushes to Discord
 on:
   push:
     branches: [main]
+  # Make-up announcement for a push that went unannounced: Actions -> this
+  # workflow -> Run workflow, from = the last commit or tag already announced.
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Announce every commit after this ref (sha or tag)"
+        required: true
+        type: string
+      to:
+        description: "...up to this ref (default the branch head)"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -20,6 +33,8 @@ jobs:
     with:
       project_name: "Loadout Lab"
       project_description: "Loadout Lab is a RuneLite (Old School RuneScape) plugin that finds the best-in-slot gear a player already owns."
+      replay_from: ${{ inputs.from }}
+      replay_to: ${{ inputs.to }}
     # Named on purpose: inheriting secrets does not cross from an org-owned repo to a
     # user-owned reusable workflow (Loadout Lab failed with "required, but not provided").
     secrets:

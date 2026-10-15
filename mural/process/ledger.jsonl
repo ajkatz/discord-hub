@@ -51,3 +51,6 @@
 {"ts": "2026-10-15T19:44:13Z", "event": "health", "deadlocks": 0}
 {"ts": "2026-10-15T19:46:53Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}
 {"ts": "2026-10-15T19:53:26Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}
+{"ts": "2026-10-15T21:02:41Z", "event": "gate-ready", "id": "ISS-01M50NYZ1380FBNRBGPTF4X2EP", "result": "pass", "live": false}
+{"ts": "2026-10-15T21:04:17Z", "event": "red", "id": "ISS-01M50NYZ1380FBNRBGPTF4X2EP", "red_receipt": "c595696e0649888c"}
+{"ts": "2026-10-15T21:15:23Z", "event": "done", "id": "ISS-01M50NYZ1380FBNRBGPTF4X2EP", "receipt_sha": "71f235c7894c6b5928be8bb90349fc0c61006c0b", "receipt_tests": "36c77fe998e08c2f", "predicted_files": 6, "actual_files": 6, "predicted_tokens": 5000, "actual_tokens": null, "wall_s": 6.4}

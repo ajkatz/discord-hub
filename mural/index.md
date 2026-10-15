@@ -2,62 +2,63 @@
 # Mural index
 
 ## adr
-- ADR-0001 — discord-hub seeded from the mural kernel template [active] (mural/decisions/0001-seeded-from-mural-kernel.md)
-- ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (mural/decisions/0002-triage-is-a-resident-bot-on-pi5.md)
-- ADR-0003 — Calibration breach — fix the measurement, add a live-iteration lane [draft] (mural/decisions/0003-calibration-breach-and-live-lane.md)
+- ADR-0001 — discord-hub seeded from the mural kernel template [active] (mural\decisions\0001-seeded-from-mural-kernel.md)
+- ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (mural\decisions\0002-triage-is-a-resident-bot-on-pi5.md)
+- ADR-0003 — Calibration breach — fix the measurement, add a live-iteration lane [draft] (mural\decisions\0003-calibration-breach-and-live-lane.md)
 
 ## asm
-- ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
+- ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural\assumptions\ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
 
 ## co
-- CO-01M50HBW4FGVWW46SFDG3SGP1B — PRD v3 -> v4 — reconcile the requirements with what shipped on 2026-10-14/15 [active] (mural/changes/CO-01M50HBW4FGVWW46SFDG3SGP1B-prd-v4-reconciliation.md)
+- CO-01M50HBW4FGVWW46SFDG3SGP1B — PRD v3 -> v4 — reconcile the requirements with what shipped on 2026-10-14/15 [active] (mural\changes\CO-01M50HBW4FGVWW46SFDG3SGP1B-prd-v4-reconciliation.md)
 
 ## evergreen
-- DOC-borders — Blueprint — walls and cavities of discord-hub [active] (mural/engineering/borders.md)
-- DOC-design-system — Design system — kernel surfaces [active] (mural/design/system.md)
-- DOC-glossary — Glossary [active] (mural/glossary.md)
-- DOC-manual — Manual — discord-hub [active] (mural/manual/index.md)
-- DOC-reuse-registry — Reuse registry — discord-hub [active] (mural/reuse/registry.md)
-- DOC-vision — Vision — discord-hub [active] (mural/product/vision.md)
+- DOC-borders — Blueprint — walls and cavities of discord-hub [active] (mural\engineering\borders.md)
+- DOC-design-system — Design system — kernel surfaces [active] (mural\design\system.md)
+- DOC-glossary — Glossary [active] (mural\glossary.md)
+- DOC-manual — Manual — discord-hub [active] (mural\manual\index.md)
+- DOC-reuse-registry — Reuse registry — discord-hub [active] (mural\reuse\registry.md)
+- DOC-vision — Vision — discord-hub [active] (mural\product\vision.md)
 
 ## finding
-- F-01M4YSPEQSEHZREY1K1006BK1A — done actuals miss untracked directories — actual_files 0 on a 15-file greenfield issue [active] (mural/findings/F-01M4YSPEQSEHZREY1K1006BK1A-done-actuals-miss-untracked-directories.md)
+- F-01M4YSPEQSEHZREY1K1006BK1A — done actuals miss untracked directories — actual_files 0 on a 15-file greenfield issue [active] (mural\findings\F-01M4YSPEQSEHZREY1K1006BK1A-done-actuals-miss-untracked-directories.md)
 
 ## issue
-- ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [done] (mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md)
-- ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [done] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
-- ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [done] (mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md)
-- ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [done] (mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md)
-- ISS-01M4YS4JPD4GTYTH3BC87FY61Q — triage bot — classify, tag status, acknowledge, ledger; bug threads from #general [done] (mural/issues/ISS-01M4YS4JPD4GTYTH3BC87FY61Q/spec.md)
-- ISS-01M4YS4JR84N865A2GE202351A — announcer — reusable push-summary workflow + caller template [done] (mural/issues/ISS-01M4YS4JR84N865A2GE202351A/spec.md)
-- ISS-01M4YS4JT1NBYWK02Q0X4XHT4G — pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section [done] (mural/issues/ISS-01M4YS4JT1NBYWK02Q0X4XHT4G/spec.md)
-- ISS-01M50HBV6NCCMT1TCCCYEGD1EY — bot self-overwrite — apply grants the bot a member overwrite on every category and child [done] (mural/issues/ISS-01M50HBV6NCCMT1TCCCYEGD1EY/spec.md)
-- ISS-01M50HBV8MWYWE7AYH7NG7W7AX — cli --no-onboarding — plan/apply/new/init leave the onboarding prompt alone [done] (mural/issues/ISS-01M50HBV8MWYWE7AYH7NG7W7AX/spec.md)
-- ISS-01M50HBVACSZN74PWSES9DYY05 — forum guidelines + announcements topic — set-topic op reconciles existing channels [done] (mural/issues/ISS-01M50HBVACSZN74PWSES9DYY05/spec.md)
-- ISS-01M50HBVC51E683DF67K2RD058 — silent triage — tags are the answer; kind tags; set-tags op adds missing forum tags [done] (mural/issues/ISS-01M50HBVC51E683DF67K2RD058/spec.md)
-- ISS-01M50HBVDXP28V5RR9AB9XYWRV — one #feedback forum per project — kind + status tags; #bug-reports removed [done] (mural/issues/ISS-01M50HBVDXP28V5RR9AB9XYWRV/spec.md)
-- ISS-01M50HBVFMAQKAMG2HEBC3AGP7 — onboarding options carry a custom emoji id — hub.json emojiId, emoji_id in the PUT [done] (mural/issues/ISS-01M50HBVFMAQKAMG2HEBC3AGP7/spec.md)
-- ISS-01M50HBVHAXN1P5TN8HX0BQ8N7 — onboarding PUT carries the seven shared channels as default_channel_ids [done] (mural/issues/ISS-01M50HBVHAXN1P5TN8HX0BQ8N7/spec.md)
-- ISS-01M50HBVK4SF3SD203P4ADTV4D — new --icon — upload the project icon as a server emoji for the pick-list [done] (mural/issues/ISS-01M50HBVK4SF3SD203P4ADTV4D/spec.md)
-- ISS-01M50HBVMWMACX1JZ9WTAPPRF0 — bot reloads hub.json on every channel-map refresh [done] (mural/issues/ISS-01M50HBVMWMACX1JZ9WTAPPRF0/spec.md)
-- ISS-01M50HBVPQQW1P0YNM7AP6ZXZD — announce.yml — quote input descriptions; test parses both workflow files [done] (mural/issues/ISS-01M50HBVPQQW1P0YNM7AP6ZXZD/spec.md)
-- ISS-01M50HBVRFPJCRQBC5XV8KR7QR — docs — handoff note for provisioning from another machine [done] (mural/issues/ISS-01M50HBVRFPJCRQBC5XV8KR7QR/spec.md)
+- ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [done] (mural\issues\ISS-01M4YRK271FFV7JQGVRH31XMB5\spec.md)
+- ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [done] (mural\issues\ISS-01M4YRK28WWY8PXJ54M3MNX4M0\spec.md)
+- ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [done] (mural\issues\ISS-01M4YRK2AMTS9NS8QGGV8PZRCV\spec.md)
+- ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [done] (mural\issues\ISS-01M4YRK2CD4S2WNDHCEFJPFZVH\spec.md)
+- ISS-01M4YS4JPD4GTYTH3BC87FY61Q — triage bot — classify, tag status, acknowledge, ledger; bug threads from #general [done] (mural\issues\ISS-01M4YS4JPD4GTYTH3BC87FY61Q\spec.md)
+- ISS-01M4YS4JR84N865A2GE202351A — announcer — reusable push-summary workflow + caller template [done] (mural\issues\ISS-01M4YS4JR84N865A2GE202351A\spec.md)
+- ISS-01M4YS4JT1NBYWK02Q0X4XHT4G — pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section [done] (mural\issues\ISS-01M4YS4JT1NBYWK02Q0X4XHT4G\spec.md)
+- ISS-01M50HBV6NCCMT1TCCCYEGD1EY — bot self-overwrite — apply grants the bot a member overwrite on every category and child [done] (mural\issues\ISS-01M50HBV6NCCMT1TCCCYEGD1EY\spec.md)
+- ISS-01M50HBV8MWYWE7AYH7NG7W7AX — cli --no-onboarding — plan/apply/new/init leave the onboarding prompt alone [done] (mural\issues\ISS-01M50HBV8MWYWE7AYH7NG7W7AX\spec.md)
+- ISS-01M50HBVACSZN74PWSES9DYY05 — forum guidelines + announcements topic — set-topic op reconciles existing channels [done] (mural\issues\ISS-01M50HBVACSZN74PWSES9DYY05\spec.md)
+- ISS-01M50HBVC51E683DF67K2RD058 — silent triage — tags are the answer; kind tags; set-tags op adds missing forum tags [done] (mural\issues\ISS-01M50HBVC51E683DF67K2RD058\spec.md)
+- ISS-01M50HBVDXP28V5RR9AB9XYWRV — one #feedback forum per project — kind + status tags; #bug-reports removed [done] (mural\issues\ISS-01M50HBVDXP28V5RR9AB9XYWRV\spec.md)
+- ISS-01M50HBVFMAQKAMG2HEBC3AGP7 — onboarding options carry a custom emoji id — hub.json emojiId, emoji_id in the PUT [done] (mural\issues\ISS-01M50HBVFMAQKAMG2HEBC3AGP7\spec.md)
+- ISS-01M50HBVHAXN1P5TN8HX0BQ8N7 — onboarding PUT carries the seven shared channels as default_channel_ids [done] (mural\issues\ISS-01M50HBVHAXN1P5TN8HX0BQ8N7\spec.md)
+- ISS-01M50HBVK4SF3SD203P4ADTV4D — new --icon — upload the project icon as a server emoji for the pick-list [done] (mural\issues\ISS-01M50HBVK4SF3SD203P4ADTV4D\spec.md)
+- ISS-01M50HBVMWMACX1JZ9WTAPPRF0 — bot reloads hub.json on every channel-map refresh [done] (mural\issues\ISS-01M50HBVMWMACX1JZ9WTAPPRF0\spec.md)
+- ISS-01M50HBVPQQW1P0YNM7AP6ZXZD — announce.yml — quote input descriptions; test parses both workflow files [done] (mural\issues\ISS-01M50HBVPQQW1P0YNM7AP6ZXZD\spec.md)
+- ISS-01M50HBVRFPJCRQBC5XV8KR7QR — docs — handoff note for provisioning from another machine [done] (mural\issues\ISS-01M50HBVRFPJCRQBC5XV8KR7QR\spec.md)
+- ISS-01M50NYZ1380FBNRBGPTF4X2EP — announcer replays a missed push on demand [done] (mural\issues\ISS-01M50NYZ1380FBNRBGPTF4X2EP\spec.md)
 
 ## playbook
-- DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural/process/playbooks/armament.md)
-- DOC-authoring — Authoring hats and playbooks (adapted from superpowers writing-skills) [active] (mural/process/playbooks/authoring.md)
-- DOC-debugging — Debugging discipline (adapted from superpowers systematic-debugging) [active] (mural/process/playbooks/debugging.md)
-- DOC-onboarding — Onboarding playbook — brownfield understanding campaign (the repo's first project) [active] (mural/process/playbooks/onboarding.md)
-- DOC-operator-profile — Operator profile — know your user like a DNA (ADR-0020) [active] (mural/process/playbooks/operator-profile.md)
-- DOC-retro-template — Retro template — ledger numbers, stimulators, detractors, graded interventions [active] (mural/process/playbooks/retro-template.md)
-- DOC-security — Security playbook — sacred privacy, defended org (standards pinned 2026-08) [active] (mural/process/playbooks/security.md)
-- DOC-stewardship — Stewardship — pro-revenue, anti-extraction [active] (mural/process/playbooks/stewardship.md)
+- DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural\process\playbooks\armament.md)
+- DOC-authoring — Authoring hats and playbooks (adapted from superpowers writing-skills) [active] (mural\process\playbooks\authoring.md)
+- DOC-debugging — Debugging discipline (adapted from superpowers systematic-debugging) [active] (mural\process\playbooks\debugging.md)
+- DOC-onboarding — Onboarding playbook — brownfield understanding campaign (the repo's first project) [active] (mural\process\playbooks\onboarding.md)
+- DOC-operator-profile — Operator profile — know your user like a DNA (ADR-0020) [active] (mural\process\playbooks\operator-profile.md)
+- DOC-retro-template — Retro template — ledger numbers, stimulators, detractors, graded interventions [active] (mural\process\playbooks\retro-template.md)
+- DOC-security — Security playbook — sacred privacy, defended org (standards pinned 2026-08) [active] (mural\process\playbooks\security.md)
+- DOC-stewardship — Stewardship — pro-revenue, anti-extraction [active] (mural\process\playbooks\stewardship.md)
 
 ## prd
-- PRD-01M4YRFMPVGJJ0XENSA97NBGBW — discord-hub — one server, one sub-community per plugin, spawned by CLI [draft] (mural/product/PRD-01M4YRFMPVGJJ0XENSA97NBGBW-discord-hub.md)
+- PRD-01M4YRFMPVGJJ0XENSA97NBGBW — discord-hub — one server, one sub-community per plugin, spawned by CLI [draft] (mural\product\PRD-01M4YRFMPVGJJ0XENSA97NBGBW-discord-hub.md)
 
 ## retro
-- RETRO-001 — R-001 — founding day and the live-iteration evening (2026-10-14/15) [active] (mural/process/retros/RETRO-001.md)
+- RETRO-001 — R-001 — founding day and the live-iteration evening (2026-10-14/15) [active] (mural\process\retros\RETRO-001.md)
 
 ## scan
-- RS-01M4YRFMRKKVE1W27FR16BP0FD — Discord sub-community provisioning — opt-in is native, reconciliation is not [active] (mural/reuse/scans/RS-01M4YRFMRKKVE1W27FR16BP0FD-discord-provisioning-prior-art.md)
+- RS-01M4YRFMRKKVE1W27FR16BP0FD — Discord sub-community provisioning — opt-in is native, reconciliation is not [active] (mural\reuse\scans\RS-01M4YRFMRKKVE1W27FR16BP0FD-discord-provisioning-prior-art.md)
