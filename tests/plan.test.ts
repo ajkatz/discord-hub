@@ -8,11 +8,10 @@ const LL = { slug: 'loadout-lab', name: 'Loadout Lab', emoji: '🧪' };
 describe('plan against an empty guild', () => {
   const ops = plan(hubWith(LL), emptySnapshot());
 
-  it('creates role, category, four channels, webhook and onboarding, in that order', () => {
+  it('creates role, category, three channels, webhook and onboarding, in that order', () => {
     expect(ops.map((o) => o.kind)).toEqual([
       'create-role',
       'create-category',
-      'create-channel',
       'create-channel',
       'create-channel',
       'create-channel',
@@ -26,15 +25,14 @@ describe('plan against an empty guild', () => {
     for (const c of channels) {
       expect(c).toMatchObject({ category: 'Loadout Lab', role: 'loadout-lab' });
     }
-    expect(channels.map((c) => c.kind === 'create-channel' && c.name)).toEqual(['announcements', 'general', 'bug-reports', 'feedback']);
+    expect(channels.map((c) => c.kind === 'create-channel' && c.name)).toEqual(['announcements', 'general', 'feedback']);
   });
 
-  it('gives the forums their tags and the text channels none', () => {
-    const [ann, gen, bugs, fb] = ops.filter((o) => o.kind === 'create-channel');
+  it('gives the forum its tags and the text channels none', () => {
+    const [ann, gen, fb] = ops.filter((o) => o.kind === 'create-channel');
     expect(ann).toMatchObject({ type: 'text', roleCanPost: false });
     expect(gen).toMatchObject({ type: 'text', roleCanPost: true });
-    expect(bugs).toMatchObject({ type: 'forum', tags: ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question'] });
-    expect(fb).toMatchObject({ type: 'forum', tags: ['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined'] });
+    expect(fb).toMatchObject({ type: 'forum', tags: ['bug', 'idea', 'question', 'praise', 'acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'planned', 'declined'] });
   });
 
   it('targets the webhook at the announcements channel', () => {
@@ -45,7 +43,7 @@ describe('plan against an empty guild', () => {
     const ob = ops.find((o) => o.kind === 'upsert-onboarding');
     expect(ob).toMatchObject({ promptTitle: 'Which plugins do you use?' });
     expect(ob && ob.kind === 'upsert-onboarding' ? ob.options : []).toEqual([
-      { title: 'Loadout Lab', emoji: '🧪', role: 'loadout-lab', category: 'Loadout Lab', channels: ['announcements', 'general', 'bug-reports', 'feedback'] },
+      { title: 'Loadout Lab', emoji: '🧪', role: 'loadout-lab', category: 'Loadout Lab', channels: ['announcements', 'general', 'feedback'] },
     ]);
   });
 
@@ -65,7 +63,6 @@ describe('plan against a partial guild', () => {
     snap.channels.push({ id: '901', name: 'Loadout Lab', type: 4, parentId: null });
     const ops = plan(hubWith(LL), snap);
     expect(ops.map((o) => o.kind)).toEqual([
-      'create-channel',
       'create-channel',
       'create-channel',
       'create-channel',
@@ -96,11 +93,11 @@ describe('plan guidelines', () => {
   it('sets guidelines on an existing forum that has none, and nothing when they match', () => {
     const hub = hubWith(LL);
     const snap = fullSnapshot(hub);
-    const bugs = snap.channels.find((c) => c.name === 'bug-reports')!;
+    const bugs = snap.channels.find((c) => c.name === 'feedback')!;
     bugs.topic = null;
     const ops = plan(hub, snap);
     expect(ops.map((o) => o.kind)).toEqual(['set-topic']);
-    expect(ops[0]).toMatchObject({ channelId: bugs.id, channel: 'bug-reports' });
+    expect(ops[0]).toMatchObject({ channelId: bugs.id, channel: 'feedback' });
     bugs.topic = desiredFor(LL).channels[2].topic;
     expect(plan(hub, snap)).toEqual([]);
   });
@@ -117,11 +114,11 @@ describe('plan tags', () => {
   it('adds missing forum tags to an existing forum and nothing when they match', () => {
     const hub = hubWith(LL);
     const snap = fullSnapshot(hub);
-    const bugs = snap.channels.find((c) => c.name === 'bug-reports')!;
-    bugs.tags = bugs.tags!.filter((n) => n !== 'feature' && n !== 'question');
+    const bugs = snap.channels.find((c) => c.name === 'feedback')!;
+    bugs.tags = bugs.tags!.filter((n) => n !== 'bug' && n !== 'known');
     const ops = plan(hub, snap);
     expect(ops.map((o) => o.kind)).toEqual(['set-tags']);
-    expect(ops[0]).toMatchObject({ channelId: bugs.id, channel: 'bug-reports' });
+    expect(ops[0]).toMatchObject({ channelId: bugs.id, channel: 'feedback' });
   });
 });
 

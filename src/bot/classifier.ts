@@ -35,7 +35,7 @@ export class ClaudeClassifier implements Classifier {
       : '(none)';
     const user = [
       `Project: ${input.project}`,
-      `Channel: #${input.channelKind}`,
+      `Channel: #${input.channelKind}${input.channelKind === 'feedback' ? ' (bugs, ideas, questions and thanks all land here)' : ''}`,
       `Author: ${input.author.name}`,
       `Title: ${input.title}`,
       '',

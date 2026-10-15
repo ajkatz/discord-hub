@@ -2,20 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { addProject, desiredFor, loadHub, saveHub, SHARED_CHANNELS, READ_ONLY_SHARED } from '../src/model.js';
+import { addProject, desiredFor, loadHub, saveHub, SHARED_CHANNELS, READ_ONLY_SHARED, FEEDBACK_TAGS } from '../src/model.js';
 import { hubWith } from './helpers.js';
 
 describe('desiredFor', () => {
-  it('derives the role, category and the four channels for a project', () => {
+  it('derives the role, category and the three channels for a project', () => {
     const d = desiredFor({ slug: 'loadout-lab', name: 'Loadout Lab' });
     expect(d.roleName).toBe('loadout-lab');
     expect(d.categoryName).toBe('Loadout Lab');
-    expect(d.channels.map((c) => c.name)).toEqual(['announcements', 'general', 'bug-reports', 'feedback']);
-    expect(d.channels.map((c) => c.kind)).toEqual(['text', 'text', 'forum', 'forum']);
+    expect(d.channels.map((c) => c.name)).toEqual(['announcements', 'general', 'feedback']);
+    expect(d.channels.map((c) => c.kind)).toEqual(['text', 'text', 'forum']);
     expect(d.channels[0]).toMatchObject({ roleCanPost: false });
     expect(d.channels[1]).toMatchObject({ roleCanPost: true });
-    expect(d.channels[2]).toMatchObject({ tags: ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question'] });
-    expect(d.channels[3]).toMatchObject({ tags: ['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined'] });
+    expect(d.channels[2]).toMatchObject({ tags: FEEDBACK_TAGS });
+    expect(FEEDBACK_TAGS).toEqual(['bug', 'idea', 'question', 'praise', 'acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'planned', 'declined']);
   });
 
   it('prefixes the category name when the project is archived', () => {

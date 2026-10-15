@@ -5,7 +5,8 @@ export interface DecideOptions {
   model: string;
 }
 
-const FEEDBACK_KIND_TAG: Partial<Record<Kind, string>> = { feature: 'idea', question: 'question', praise: 'praise' };
+/** Kind -> the #feedback kind tag the bot applies. 'other' gets none. */
+const KIND_TAG: Partial<Record<Kind, string>> = { bug: 'bug', feature: 'idea', question: 'question', praise: 'praise' };
 
 function record(input: ClassifyInput, c: Classification | null, status: Status, opts: DecideOptions, rationale?: string): TriageRecord {
   return {
@@ -24,8 +25,9 @@ function record(input: ClassifyInput, c: Classification | null, status: Status, 
 }
 
 /**
- * Pure triage policy: classification in, forum tags + reply + ledger record out.
- * Never produces a delete, edit, lock or close.
+ * Pure triage policy: classification in, forum tags + (rarely) a reply + ledger record out.
+ * Silent by design: the tags are the answer. The bot speaks only when it links a duplicate
+ * or opens a thread on someone's behalf. Never produces a delete, edit, lock or close.
  */
 export function decide(input: ClassifyInput, result: Classification | Error, opts: DecideOptions): Decision {
   if (result instanceof Error) {
@@ -33,22 +35,16 @@ export function decide(input: ClassifyInput, result: Classification | Error, opt
   }
   const c = result;
 
-  if (input.channelKind === 'bug-reports') {
+  if (input.channelKind === 'feedback') {
+    const kindTag = KIND_TAG[c.kind];
     if (c.kind === 'bug' && c.duplicateOf) {
       return {
-        tags: ['known'],
+        tags: ['bug', 'known'],
         reply: `This looks like the same issue as <#${c.duplicateOf}>, so I have marked it known.`,
         createBugThread: null,
         record: record(input, c, 'known', opts),
       };
     }
-    // Silent: the tag is the answer. Kind tags let a feature request live here without a nudge.
-    const kindTag = c.kind === 'feature' ? ['feature'] : c.kind === 'question' ? ['question'] : [];
-    return { tags: [...kindTag, 'acknowledged'], reply: null, createBugThread: null, record: record(input, c, 'acknowledged', opts) };
-  }
-
-  if (input.channelKind === 'feedback') {
-    const kindTag = FEEDBACK_KIND_TAG[c.kind];
     return {
       tags: kindTag ? [kindTag, 'acknowledged'] : ['acknowledged'],
       reply: null,
@@ -61,7 +57,7 @@ export function decide(input: ClassifyInput, result: Classification | Error, opt
   if (c.kind === 'bug' && c.confidence === 'high') {
     const quoted = input.body.split('\n').map((l) => `> ${l}`).join('\n');
     return {
-      tags: ['acknowledged'],
+      tags: ['bug', 'acknowledged'],
       reply: `This looks like a bug report, so I opened {thread} for it.`,
       createBugThread: {
         title: c.summary.slice(0, 100),

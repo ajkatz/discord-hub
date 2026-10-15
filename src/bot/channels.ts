@@ -1,10 +1,10 @@
 import { desiredFor, eqName, type GuildSnapshot, type Hub } from '../model.js';
 import { findCategory, findChild } from '../plan.js';
 
-export type MappedKind = 'bug-reports' | 'feedback' | 'general' | 'announcements';
+export type MappedKind = 'feedback' | 'general' | 'announcements';
 export interface MappedChannel { slug: string; kind: MappedKind }
 
-/** channel id -> (project, kind) for every live project's four channels. */
+/** channel id -> (project, kind) for every live project's three channels. */
 export function buildChannelMap(hub: Hub, snap: GuildSnapshot): Map<string, MappedChannel> {
   const map = new Map<string, MappedChannel>();
   for (const p of hub.projects) {

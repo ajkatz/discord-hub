@@ -15,13 +15,13 @@ function run(args: string[], env: Record<string, string> = {}) {
 }
 
 describe('discord-hub plan', () => {
-  it('prints the eight ops for one project against an empty snapshot and mutates nothing', () => {
+  it('prints the seven ops for one project against an empty snapshot and mutates nothing', () => {
     const r = run(['plan', '--hub', HUB, '--snapshot', SNAP]);
     expect(r.code).toBe(0);
     const lines = r.out.split('\n').filter((l) => /^\s*\d+\. /.test(l));
-    expect(lines).toHaveLength(8);
+    expect(lines).toHaveLength(7);
     expect(r.out).toMatch(/create role @loadout-lab/);
-    expect(r.out).toMatch(/create forum #bug-reports/);
+    expect(r.out).toMatch(/create forum #feedback/);
     expect(r.out).toMatch(/update onboarding prompt/);
   });
 
@@ -29,7 +29,7 @@ describe('discord-hub plan', () => {
     const r = run(['plan', '--hub', HUB, '--snapshot', SNAP, '--no-onboarding']);
     expect(r.code).toBe(0);
     expect(r.out).not.toMatch(/update onboarding prompt/);
-    expect(r.out.split('\n').filter((l) => /^\s*\d+\. /.test(l))).toHaveLength(7);
+    expect(r.out.split('\n').filter((l) => /^\s*\d+\. /.test(l))).toHaveLength(6);
   });
 
   it('includes the shared channels with --shared', () => {

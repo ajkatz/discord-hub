@@ -10,9 +10,9 @@ version: 2
 ## What this software does
 
 `discord-hub` keeps one Discord server in sync with `hub.json`: one sub-community (role,
-private category, announcements, general, bug-reports forum, feedback forum, webhook,
-onboarding option) per project. A resident bot triages new forum threads with Claude:
-status tag, acknowledgment, ledger record.
+private category, announcements, general, one feedback forum, webhook, onboarding option)
+per project. A resident bot triages new forum threads with Claude: kind tag + status tag,
+ledger record, silent unless it links a duplicate.
 
 ## The critical things to know
 

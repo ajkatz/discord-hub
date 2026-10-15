@@ -45,8 +45,7 @@ function channelIdFor(slug: string, kind: MappedChannel['kind']): string | undef
   for (const [id, m] of channels) if (m.slug === slug && m.kind === kind) return id;
   return undefined;
 }
-const bugReportsChannelId = (slug: string) => channelIdFor(slug, 'bug-reports');
-const siblingsFor = (slug: string) => ({ feedback: channelIdFor(slug, 'feedback'), bugReports: channelIdFor(slug, 'bug-reports') });
+const feedbackChannelId = (slug: string) => channelIdFor(slug, 'feedback');
 
 async function setTags(thread: AnyThreadChannel, names: string[]): Promise<void> {
   const parent = thread.parent;
@@ -64,7 +63,7 @@ async function setTags(thread: AnyThreadChannel, names: string[]): Promise<void>
 async function onThreadCreate(thread: AnyThreadChannel, newlyCreated: boolean): Promise<void> {
   if (!newlyCreated || !thread.parentId) return;
   const entry = channels.get(thread.parentId);
-  if (!entry || (entry.kind !== 'bug-reports' && entry.kind !== 'feedback')) return;
+  if (!entry || entry.kind !== 'feedback') return;
   const starter = await thread.fetchStarterMessage().catch(() => null);
   if (starter?.author.bot) return; // a thread the bot opened itself
   const input: ClassifyInput = {
@@ -77,7 +76,6 @@ async function onThreadCreate(thread: AnyThreadChannel, newlyCreated: boolean): 
     body: starter?.content ?? '',
     author: { id: starter?.author.id ?? thread.ownerId ?? '', name: starter?.author.username ?? 'unknown' },
     openRecords: ledger.open(entry.slug),
-    siblings: siblingsFor(entry.slug),
   };
   const d = decide(input, await classify(input), { now: now(), model: classifier.model });
   await setTags(thread, d.tags);
@@ -100,14 +98,13 @@ async function onMessage(message: Message): Promise<void> {
     body: message.content,
     author: { id: message.author.id, name: message.author.username },
     openRecords: ledger.open(entry.slug),
-    siblings: siblingsFor(entry.slug),
   };
   const d = decide(input, await classify(input), { now: now(), model: classifier.model });
   if (!d.createBugThread) {
     if (d.record) ledger.append(d.record);
     return;
   }
-  const forumId = bugReportsChannelId(entry.slug);
+  const forumId = feedbackChannelId(entry.slug);
   if (!forumId) return;
   const forum = (await message.client.channels.fetch(forumId)) as ForumChannel | null;
   if (!forum || forum.type !== ChannelType.GuildForum) return;
@@ -125,7 +122,7 @@ async function onMessage(message: Message): Promise<void> {
 async function onThreadUpdate(before: AnyThreadChannel, after: AnyThreadChannel): Promise<void> {
   if (!after.parentId || selfTagged.has(after.id)) return;
   const entry = channels.get(after.parentId);
-  if (!entry || (entry.kind !== 'bug-reports' && entry.kind !== 'feedback')) return;
+  if (!entry || entry.kind !== 'feedback') return;
   const parent = after.parent;
   if (!parent || parent.type !== ChannelType.GuildForum) return;
   const added = after.appliedTags.filter((t) => !before.appliedTags.includes(t));

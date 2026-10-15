@@ -43,17 +43,18 @@ export interface DesiredProject {
   channels: DesiredChannel[];
 }
 
-/** Status vocabulary for #bug-reports threads (REQ-003). */
-export const BUG_TAGS = ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question'];
-/** Tags for #feedback threads: what it is, then what happened to it. */
-export const FEEDBACK_TAGS = ['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined'];
+/** Kind tags on #feedback: what a post is (the bot sets one). */
+export const KIND_TAGS = ['bug', 'idea', 'question', 'praise'];
+/** Status tags on #feedback: where it stands (the bot sets acknowledged/known; the rest are the owner's). */
+export const STATUS_TAGS = ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'planned', 'declined'];
+/** All #feedback tags, kind first. */
+export const FEEDBACK_TAGS = [...KIND_TAGS, ...STATUS_TAGS];
 
 /** The seven top-level channels onboarding requires (five of them @everyone-writable). */
 export const SHARED_CHANNELS = ['welcome', 'rules', 'all-announcements', 'lounge', 'introductions', 'help', 'off-topic'] as const;
 export const READ_ONLY_SHARED: string[] = ['rules', 'all-announcements'];
 
-export const BUG_GUIDELINES = 'One bug per post. Include: what you did, what happened, what you expected, plugin version, and a screenshot if you have one. I read everything; the tag shows where it stands.';
-export const FEEDBACK_GUIDELINES = 'Ideas, questions and thanks go here. One topic per post. Bugs belong in #bug-reports.';
+export const FEEDBACK_GUIDELINES = 'Bugs, ideas, questions and thanks, one per post. For a bug include what you did, what happened, what you expected, the plugin version, and a screenshot if you have one. I read everything; the tags show what it is and where it stands.';
 export const ANNOUNCEMENTS_TOPIC = 'Release notes and development updates. Posted automatically on every push.';
 export const WEBHOOK_NAME = 'Push announcer';
 export const ARCHIVED_PREFIX = '[archived] ';
@@ -73,7 +74,6 @@ export function desiredFor(p: ProjectConfig): DesiredProject {
     channels: [
       { name: 'announcements', kind: 'text', roleCanPost: false, tags: [], topic: ANNOUNCEMENTS_TOPIC },
       { name: 'general', kind: 'text', roleCanPost: true, tags: [], topic: '' },
-      { name: 'bug-reports', kind: 'forum', roleCanPost: true, tags: [...BUG_TAGS], topic: BUG_GUIDELINES },
       { name: 'feedback', kind: 'forum', roleCanPost: true, tags: [...FEEDBACK_TAGS], topic: FEEDBACK_GUIDELINES },
     ],
   };

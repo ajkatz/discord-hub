@@ -26,10 +26,9 @@ describe('apply against an empty fake guild', () => {
     const cat = snap.channels.find((c) => c.type === 4 && c.name === 'Loadout Lab');
     expect(cat).toBeDefined();
     const children = snap.channels.filter((c) => c.parentId === cat!.id);
-    expect(children.map((c) => c.name)).toEqual(['announcements', 'general', 'bug-reports', 'feedback']);
-    expect(children.map((c) => c.type)).toEqual([0, 0, 15, 15]);
-    expect(children[2].tags).toEqual(['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question']);
-    expect(children[3].tags).toEqual(['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined']);
+    expect(children.map((c) => c.name)).toEqual(['announcements', 'general', 'feedback']);
+    expect(children.map((c) => c.type)).toEqual([0, 0, 15]);
+    expect(children[2].tags).toEqual(['bug', 'idea', 'question', 'praise', 'acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'planned', 'declined']);
   });
 
   it('hides the category from @everyone and shows it to the role, synced on children', async () => {
@@ -65,8 +64,7 @@ describe('apply against an empty fake guild', () => {
   it('writes the guidelines as the forum topic', async () => {
     const { api } = await provision();
     const snap = await api.snapshot(GUILD);
-    expect(snap.channels.find((c) => c.name === 'bug-reports')!.topic).toMatch(/One bug per post/);
-    expect(snap.channels.find((c) => c.name === 'feedback')!.topic).toMatch(/bug-reports/);
+    expect(snap.channels.find((c) => c.name === 'feedback')!.topic).toMatch(/Bugs, ideas, questions and thanks/);
     expect(snap.channels.find((c) => c.name === 'general')!.topic ?? '').toBe('');
   });
 
@@ -132,7 +130,7 @@ describe('apply stops on the first failure', () => {
     const result = await apply(ops, api, hub, snap);
     expect(result.failed?.op.kind).toBe('create-webhook');
     expect(result.failed?.error).toMatch(/createWebhook/);
-    expect(result.completed.map((o) => o.kind)).toEqual(['create-role', 'create-category', 'create-channel', 'create-channel', 'create-channel', 'create-channel']);
+    expect(result.completed.map((o) => o.kind)).toEqual(['create-role', 'create-category', 'create-channel', 'create-channel', 'create-channel']);
     api.failOn = undefined;
     const again = plan(hub, await api.snapshot(GUILD));
     expect(again.map((o) => o.kind)).toEqual(['create-webhook', 'upsert-onboarding']);
@@ -143,19 +141,19 @@ describe('set-tags via apply', () => {
   it('keeps existing tag ids and appends the missing names', async () => {
     const { api } = await provision();
     const before = await api.snapshot(GUILD);
-    const bugs = before.channels.find((c) => c.name === 'bug-reports')!;
+    const bugs = before.channels.find((c) => c.name === 'feedback')!;
     const keptId = bugs.tagObjects!.find((t) => t.name === 'acknowledged')!.id;
-    // simulate a forum created before kind tags existed
-    await api.modifyChannel(bugs.id, { available_tags: bugs.tagObjects!.filter((t) => t.name !== 'feature' && t.name !== 'question') });
+    // simulate a forum created before the merged vocabulary existed
+    await api.modifyChannel(bugs.id, { available_tags: bugs.tagObjects!.filter((t) => t.name !== 'bug' && t.name !== 'known') });
     const snap = await api.snapshot(GUILD);
     const hub = hubWith(LL);
     const ops = plan(hub, snap);
     expect(ops.map((o) => o.kind)).toEqual(['set-tags']);
     await apply(ops, api, hub, snap);
     const after = await api.snapshot(GUILD);
-    const tags = after.channels.find((c) => c.name === 'bug-reports')!.tagObjects!;
+    const tags = after.channels.find((c) => c.name === 'feedback')!.tagObjects!;
     expect(tags.find((t) => t.name === 'acknowledged')!.id).toBe(keptId);
-    expect(tags.map((t) => t.name)).toEqual(['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question']);
+    expect(tags.map((t) => t.name)).toEqual(['idea', 'question', 'praise', 'acknowledged', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'planned', 'declined', 'bug', 'known']);
     expect(plan(hub, after)).toEqual([]);
   });
 });

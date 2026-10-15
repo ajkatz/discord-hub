@@ -44,9 +44,8 @@ the top of the channel list. Picking a plugin grants its role and reveals its ca
 node bin/discord-hub.mjs new goal-planner --name "Goal Planner" --emoji 🎯 --repo ajkatz/runelite-goal-planner
 ```
 
-Creates the role, private category, `#announcements` (read-only), `#general`,
-`#bug-reports` (forum, status tags), `#feedback` (forum), the announcer webhook, and the
-onboarding option. The webhook URL is printed **once**: paste it into the project repo
+Creates the role, private category, `#announcements` (read-only), `#general`, `#feedback`
+(one forum: kind tags + status tags), the announcer webhook, and the onboarding option. The webhook URL is printed **once**: paste it into the project repo
 as the `DISCORD_WEBHOOK_URL` Actions secret, add `ANTHROPIC_API_KEY`, and copy
 `templates/discord-announce.yml` into the repo as `.github/workflows/discord-announce.yml`
 with `project_name` set. Every push to `main` then posts a summary to `#announcements`.
@@ -65,9 +64,9 @@ our Discord" link at the new invite.
 
 ## 5. Triage bot on pi5
 
-The bot classifies every new `#bug-reports` / `#feedback` thread (status tag +
-acknowledgment + ledger), opens `#bug-reports` threads for clear bug reports in
-`#general`, and records any tag you change by hand. Changing a tag is your verdict; the
+The bot classifies every new `#feedback` thread (kind tag + `acknowledged`, or `known`
+with a link when it duplicates an open thread, plus a ledger record), opens `#feedback`
+threads for clear bug reports in `#general`, and records any tag you change by hand. Changing a tag is your verdict; the
 bot never reverts it.
 
 On the pi (once), create `/home/andrew/discord-hub.env`, mode 600:

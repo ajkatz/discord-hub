@@ -8,10 +8,10 @@ describe('buildChannelMap', () => {
     const snap = fullSnapshot(hub);
     const map = buildChannelMap(hub, snap);
     const kinds = [...map.values()].filter((v) => v.slug === 'loadout-lab').map((v) => v.kind).sort();
-    expect(kinds).toEqual(['announcements', 'bug-reports', 'feedback', 'general']);
+    expect(kinds).toEqual(['announcements', 'feedback', 'general']);
     expect([...map.values()].some((v) => v.slug === 'goal-planner')).toBe(false);
-    const bugs = snap.channels.find((c) => c.name === 'bug-reports' && c.parentId === snap.channels.find((k) => k.name === 'Loadout Lab')!.id)!;
-    expect(map.get(bugs.id)).toEqual({ slug: 'loadout-lab', kind: 'bug-reports' });
+    const fb = snap.channels.find((c) => c.name === 'feedback' && c.parentId === snap.channels.find((k) => k.name === 'Loadout Lab')!.id)!;
+    expect(map.get(fb.id)).toEqual({ slug: 'loadout-lab', kind: 'feedback' });
   });
 });
 
