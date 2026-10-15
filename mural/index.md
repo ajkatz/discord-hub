@@ -16,6 +16,9 @@
 - DOC-reuse-registry — Reuse registry — discord-hub [active] (mural/reuse/registry.md)
 - DOC-vision — Vision — discord-hub [active] (mural/product/vision.md)
 
+## finding
+- F-01M4YSPEQSEHZREY1K1006BK1A — done actuals miss untracked directories — actual_files 0 on a 15-file greenfield issue [active] (mural/findings/F-01M4YSPEQSEHZREY1K1006BK1A-done-actuals-miss-untracked-directories.md)
+
 ## issue
 - ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [done] (mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md)
 - ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [done] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
