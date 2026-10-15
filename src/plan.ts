@@ -27,6 +27,7 @@ export type Op =
   | { kind: 'create-category'; name: string; role: string }
   | { kind: 'create-channel'; name: string; type: ChannelKind; category: string; role: string; roleCanPost: boolean; tags: string[]; topic: string }
   | { kind: 'set-topic'; channelId: string; channel: string; category: string; topic: string }
+  | { kind: 'set-tags'; channelId: string; channel: string; category: string; tags: string[] }
   | { kind: 'rename-channel'; channelId: string; name: string }
   | { kind: 'create-webhook'; category: string; channel: string; name: string }
   | { kind: 'create-shared-channel'; name: string; everyoneCanPost: boolean }
@@ -86,8 +87,13 @@ export function plan(hub: Hub, snap: GuildSnapshot, opts: PlanOptions = {}): Op[
       const existing = cat ? findChild(snap, cat.id, ch.name) : undefined;
       if (!existing) {
         channels.push({ kind: 'create-channel', name: ch.name, type: ch.kind, category: d.categoryName, role: d.roleName, roleCanPost: ch.roleCanPost, tags: [...ch.tags], topic: ch.topic });
-      } else if (ch.topic && existing.topic !== undefined && (existing.topic ?? '') !== ch.topic) {
-        topics.push({ kind: 'set-topic', channelId: existing.id, channel: ch.name, category: d.categoryName, topic: ch.topic });
+      } else {
+        if (ch.topic && existing.topic !== undefined && (existing.topic ?? '') !== ch.topic) {
+          topics.push({ kind: 'set-topic', channelId: existing.id, channel: ch.name, category: d.categoryName, topic: ch.topic });
+        }
+        if (ch.kind === 'forum' && existing.tags && ch.tags.some((name) => !existing.tags!.some((have) => eqName(have, name)))) {
+          topics.push({ kind: 'set-tags', channelId: existing.id, channel: ch.name, category: d.categoryName, tags: [...ch.tags] });
+        }
       }
     }
     const ann = cat ? findChild(snap, cat.id, 'announcements') : undefined;
@@ -139,6 +145,7 @@ export function describeOp(op: Op): string {
     case 'create-channel': return `create ${op.type} #${op.name} in "${op.category}"${op.tags.length ? ` tags=[${op.tags.join(', ')}]` : ''}`;
     case 'rename-channel': return `rename channel ${op.channelId} -> "${op.name}"`;
     case 'set-topic': return `set guidelines on "${op.category}" #${op.channel}`;
+    case 'set-tags': return `add missing tags on "${op.category}" #${op.channel} -> [${op.tags.join(', ')}]`;
     case 'create-webhook': return `create webhook "${op.name}" in "${op.category}" #${op.channel}`;
     case 'create-shared-channel': return `create shared #${op.name}${op.everyoneCanPost ? '' : ' (read-only)'}`;
     case 'upsert-onboarding': return `update onboarding prompt "${op.promptTitle}" -> [${op.options.map((o) => o.title).join(', ')}]`;

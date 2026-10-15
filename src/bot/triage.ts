@@ -37,34 +37,21 @@ export function decide(input: ClassifyInput, result: Classification | Error, opt
     if (c.kind === 'bug' && c.duplicateOf) {
       return {
         tags: ['known'],
-        reply: `Thanks, this looks like the same issue as <#${c.duplicateOf}>, so I have marked it known. ${c.rationale}`.trim(),
+        reply: `This looks like the same issue as <#${c.duplicateOf}>, so I have marked it known.`,
         createBugThread: null,
         record: record(input, c, 'known', opts),
       };
     }
-    if (c.kind === 'bug') {
-      return {
-        tags: ['acknowledged'],
-        reply: `Thanks, logged as "${c.summary}" and marked acknowledged. ${c.rationale}`.trim(),
-        createBugThread: null,
-        record: record(input, c, 'acknowledged', opts),
-      };
-    }
-    const feedback = input.siblings?.feedback ? `<#${input.siblings.feedback}>` : '#feedback';
-    const reply = c.kind === 'feature' ? `${c.rationale} ${feedback} is the better home for it.` : `${c.rationale} Marked not an issue.`;
-    return {
-      tags: ['not-an-issue'],
-      reply: reply.trim(),
-      createBugThread: null,
-      record: record(input, c, 'not-an-issue', opts),
-    };
+    // Silent: the tag is the answer. Kind tags let a feature request live here without a nudge.
+    const kindTag = c.kind === 'feature' ? ['feature'] : c.kind === 'question' ? ['question'] : [];
+    return { tags: [...kindTag, 'acknowledged'], reply: null, createBugThread: null, record: record(input, c, 'acknowledged', opts) };
   }
 
   if (input.channelKind === 'feedback') {
     const kindTag = FEEDBACK_KIND_TAG[c.kind];
     return {
       tags: kindTag ? [kindTag, 'acknowledged'] : ['acknowledged'],
-      reply: `Thanks, noted as "${c.summary}" and marked acknowledged. ${c.rationale}`.trim(),
+      reply: null,
       createBugThread: null,
       record: record(input, c, 'acknowledged', opts),
     };
@@ -75,7 +62,7 @@ export function decide(input: ClassifyInput, result: Classification | Error, opt
     const quoted = input.body.split('\n').map((l) => `> ${l}`).join('\n');
     return {
       tags: ['acknowledged'],
-      reply: `This looks like a bug report, so I opened {thread} for it and marked it acknowledged. ${c.rationale}`.trim(),
+      reply: `This looks like a bug report, so I opened {thread} for it.`,
       createBugThread: {
         title: c.summary.slice(0, 100),
         body: `Reported by <@${input.author.id}> in <#${input.channelId}>:\n${quoted}`,

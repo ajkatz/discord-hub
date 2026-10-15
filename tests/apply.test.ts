@@ -28,7 +28,7 @@ describe('apply against an empty fake guild', () => {
     const children = snap.channels.filter((c) => c.parentId === cat!.id);
     expect(children.map((c) => c.name)).toEqual(['announcements', 'general', 'bug-reports', 'feedback']);
     expect(children.map((c) => c.type)).toEqual([0, 0, 15, 15]);
-    expect(children[2].tags).toEqual(['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info']);
+    expect(children[2].tags).toEqual(['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question']);
     expect(children[3].tags).toEqual(['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined']);
   });
 
@@ -136,6 +136,27 @@ describe('apply stops on the first failure', () => {
     api.failOn = undefined;
     const again = plan(hub, await api.snapshot(GUILD));
     expect(again.map((o) => o.kind)).toEqual(['create-webhook', 'upsert-onboarding']);
+  });
+});
+
+describe('set-tags via apply', () => {
+  it('keeps existing tag ids and appends the missing names', async () => {
+    const { api } = await provision();
+    const before = await api.snapshot(GUILD);
+    const bugs = before.channels.find((c) => c.name === 'bug-reports')!;
+    const keptId = bugs.tagObjects!.find((t) => t.name === 'acknowledged')!.id;
+    // simulate a forum created before kind tags existed
+    await api.modifyChannel(bugs.id, { available_tags: bugs.tagObjects!.filter((t) => t.name !== 'feature' && t.name !== 'question') });
+    const snap = await api.snapshot(GUILD);
+    const hub = hubWith(LL);
+    const ops = plan(hub, snap);
+    expect(ops.map((o) => o.kind)).toEqual(['set-tags']);
+    await apply(ops, api, hub, snap);
+    const after = await api.snapshot(GUILD);
+    const tags = after.channels.find((c) => c.name === 'bug-reports')!.tagObjects!;
+    expect(tags.find((t) => t.name === 'acknowledged')!.id).toBe(keptId);
+    expect(tags.map((t) => t.name)).toEqual(['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question']);
+    expect(plan(hub, after)).toEqual([]);
   });
 });
 

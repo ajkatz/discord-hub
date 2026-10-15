@@ -33,7 +33,7 @@ describe('plan against an empty guild', () => {
     const [ann, gen, bugs, fb] = ops.filter((o) => o.kind === 'create-channel');
     expect(ann).toMatchObject({ type: 'text', roleCanPost: false });
     expect(gen).toMatchObject({ type: 'text', roleCanPost: true });
-    expect(bugs).toMatchObject({ type: 'forum', tags: ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info'] });
+    expect(bugs).toMatchObject({ type: 'forum', tags: ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question'] });
     expect(fb).toMatchObject({ type: 'forum', tags: ['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined'] });
   });
 
@@ -110,6 +110,18 @@ describe('plan guidelines', () => {
     const snap = fullSnapshot(hub);
     for (const c of snap.channels) delete c.topic;
     expect(plan(hub, snap)).toEqual([]);
+  });
+});
+
+describe('plan tags', () => {
+  it('adds missing forum tags to an existing forum and nothing when they match', () => {
+    const hub = hubWith(LL);
+    const snap = fullSnapshot(hub);
+    const bugs = snap.channels.find((c) => c.name === 'bug-reports')!;
+    bugs.tags = bugs.tags!.filter((n) => n !== 'feature' && n !== 'question');
+    const ops = plan(hub, snap);
+    expect(ops.map((o) => o.kind)).toEqual(['set-tags']);
+    expect(ops[0]).toMatchObject({ channelId: bugs.id, channel: 'bug-reports' });
   });
 });
 

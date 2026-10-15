@@ -23,7 +23,7 @@ export class FakeDiscordApi implements DiscordApi {
 
   constructor(seed: GuildSnapshot) {
     this.roles = seed.roles.map((r) => ({ ...r }));
-    this.channels = seed.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined, topic: c.topic ?? null }));
+    this.channels = seed.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined, tagObjects: c.tagObjects ? c.tagObjects.map((tg) => ({ ...tg })) : c.tags ? c.tags.map((name) => ({ id: this.id(), name })) : undefined, topic: c.topic ?? null }));
     this.webhooks = seed.webhooks.map((w) => ({ ...w, token: 'seeded-token' }));
     this.onboarding = clonePrompts(seed.onboarding);
     if (!this.roles.some((r) => r.id === seed.guildId)) this.roles.unshift({ id: seed.guildId, name: '@everyone' });
@@ -52,7 +52,7 @@ export class FakeDiscordApi implements DiscordApi {
       guildId,
       botId: this.botId,
       roles: this.roles.map((r) => ({ ...r })),
-      channels: this.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined })),
+      channels: this.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined, tagObjects: c.tagObjects ? c.tagObjects.map((tg) => ({ ...tg })) : undefined })),
       webhooks: this.webhooks.map(({ id, channelId, name }) => ({ id, channelId, name })),
       onboarding: clonePrompts(this.onboarding),
     };
@@ -73,6 +73,7 @@ export class FakeDiscordApi implements DiscordApi {
       type: body.type,
       parentId: body.parent_id ?? null,
       tags: body.available_tags ? body.available_tags.map((t) => t.name) : undefined,
+      tagObjects: body.available_tags ? body.available_tags.map((t) => ({ id: this.id(), name: t.name })) : undefined,
       topic: body.topic ?? null,
     };
     this.channels.push(ch);
@@ -80,12 +81,16 @@ export class FakeDiscordApi implements DiscordApi {
     return { id: ch.id };
   }
 
-  async modifyChannel(channelId: string, body: { name?: string; topic?: string }): Promise<void> {
+  async modifyChannel(channelId: string, body: { name?: string; topic?: string; available_tags?: { id?: string; name: string }[] }): Promise<void> {
     this.guard('modifyChannel');
     const ch = this.channels.find((c) => c.id === channelId);
     if (!ch) throw new Error(`fake: unknown channel ${channelId}`);
     if (body.name !== undefined) ch.name = body.name;
     if (body.topic !== undefined) ch.topic = body.topic;
+    if (body.available_tags) {
+      ch.tagObjects = body.available_tags.map((tg) => ({ id: tg.id ?? this.id(), name: tg.name }));
+      ch.tags = ch.tagObjects.map((tg) => tg.name);
+    }
   }
 
   async createWebhook(channelId: string, name: string): Promise<{ id: string; token: string }> {

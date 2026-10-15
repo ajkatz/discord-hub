@@ -40,7 +40,7 @@ export interface DesiredProject {
 }
 
 /** Status vocabulary for #bug-reports threads (REQ-003). */
-export const BUG_TAGS = ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info'];
+export const BUG_TAGS = ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question'];
 /** Tags for #feedback threads: what it is, then what happened to it. */
 export const FEEDBACK_TAGS = ['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined'];
 
@@ -128,6 +128,8 @@ export interface SnapChannel {
   parentId: string | null;
   /** Forum tag names, when a forum. */
   tags?: string[];
+  /** Forum tags with ids, when known (needed to add tags without recreating existing ones). */
+  tagObjects?: { id: string; name: string }[];
   /** Channel topic / forum guidelines, when known. */
   topic?: string | null;
 }

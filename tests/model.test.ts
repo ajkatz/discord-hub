@@ -14,7 +14,7 @@ describe('desiredFor', () => {
     expect(d.channels.map((c) => c.kind)).toEqual(['text', 'text', 'forum', 'forum']);
     expect(d.channels[0]).toMatchObject({ roleCanPost: false });
     expect(d.channels[1]).toMatchObject({ roleCanPost: true });
-    expect(d.channels[2]).toMatchObject({ tags: ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info'] });
+    expect(d.channels[2]).toMatchObject({ tags: ['acknowledged', 'known', 'in-progress', 'fixed', 'not-an-issue', 'needs-info', 'feature', 'question'] });
     expect(d.channels[3]).toMatchObject({ tags: ['idea', 'question', 'praise', 'acknowledged', 'planned', 'declined'] });
   });
 

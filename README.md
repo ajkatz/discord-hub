@@ -5,14 +5,15 @@ members switch on themselves, and a CLI that spawns a new one in one command.
 
 Per project: a mentionable role, a private category visible to that role, `#announcements`
 (read-only, fed by the push announcer), `#general`, `#bug-reports` (forum with status tags
-`acknowledged known in-progress fixed not-an-issue needs-info`), `#feedback` (forum with
+`acknowledged known in-progress fixed not-an-issue needs-info` plus kind tags `feature question`), `#feedback` (forum with
 `idea question praise acknowledged planned declined`), an announcer webhook, and an option
 in the server's onboarding prompt ("Which plugins do you use?") that grants the role.
 
 A resident bot (pi5) triages every new forum thread: Claude classifies it, the bot applies
-the status tag, posts a one-line acknowledgment with the rationale, and appends a record to
-`data/triage.jsonl`. Clear bug reports in `#general` get a `#bug-reports` thread opened for
-them. Tags you change by hand are recorded, never reverted.
+the tags (kind + `acknowledged`, or `known` with a link when it duplicates an open thread)
+and appends a record with the rationale to `data/triage.jsonl`. It stays silent otherwise.
+Clear bug reports in `#general` get a `#bug-reports` thread opened for them. Tags you change
+by hand are recorded, never reverted.
 
 A Mural-managed project (`mural/` is the artifact tree; gates are exit codes).
 

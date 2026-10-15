@@ -130,6 +130,13 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
           await api.modifyChannel(op.channelId, { topic: op.topic });
           break;
         }
+        case 'set-tags': {
+          const existing = snapshot.channels.find((c) => c.id === op.channelId)?.tagObjects ?? [];
+          const merged: { id?: string; name: string }[] = existing.map((tg) => ({ id: tg.id, name: tg.name }));
+          for (const name of op.tags) if (!merged.some((tg) => eqName(tg.name, name))) merged.push({ name });
+          await api.modifyChannel(op.channelId, { available_tags: merged });
+          break;
+        }
         case 'create-webhook': {
           const channelId = res.child(op.category, op.channel);
           const { id, token } = await api.createWebhook(channelId, op.name);

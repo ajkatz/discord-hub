@@ -25,52 +25,48 @@ function cls(over: Partial<Classification> = {}): Classification {
 }
 
 describe('decide for a #bug-reports thread', () => {
-  it('acknowledges a new bug', () => {
+  it('acknowledges a new bug silently', () => {
     const d = decide(input('bug-reports'), cls(), OPTS);
     expect(d.tags).toEqual(['acknowledged']);
-    expect(d.reply).toContain('Spec bar shows double the real cost');
-    expect(d.reply).not.toContain('!');
+    expect(d.reply).toBeNull();
     expect(d.createBugThread).toBeNull();
     expect(d.record).toMatchObject({ project: 'loadout-lab', threadId: 't1', kind: 'bug', status: 'acknowledged', duplicateOf: null, model: 'fake-model', ts: NOW });
   });
 
-  it('marks a duplicate as known and links the original', () => {
+  it('marks a duplicate as known and links the original (the one reply)', () => {
     const d = decide(input('bug-reports'), cls({ duplicateOf: '555' }), OPTS);
     expect(d.tags).toEqual(['known']);
     expect(d.reply).toContain('<#555>');
+    expect(d.reply).not.toContain('!');
     expect(d.record).toMatchObject({ status: 'known', duplicateOf: '555' });
   });
 
-  it('marks a question as not an issue', () => {
-    const d = decide(input('bug-reports'), cls({ kind: 'question' }), OPTS);
-    expect(d.tags).toEqual(['not-an-issue']);
-    expect(d.record.status).toBe('not-an-issue');
-  });
-
-  it('points a feature request at #feedback and marks it not an issue', () => {
+  it('tags a feature request as feature + acknowledged without replying', () => {
     const d = decide(input('bug-reports'), cls({ kind: 'feature' }), OPTS);
-    expect(d.tags).toEqual(['not-an-issue']);
-    expect(d.reply).toMatch(/#feedback is the better home/);
-    expect(d.reply!.startsWith(cls().rationale)).toBe(true);
+    expect(d.tags).toEqual(['feature', 'acknowledged']);
+    expect(d.reply).toBeNull();
+    expect(d.record).toMatchObject({ kind: 'feature', status: 'acknowledged' });
   });
 
-  it('links the real #feedback channel when the sibling id is known', () => {
-    const d = decide(input('bug-reports', { siblings: { feedback: '777' } }), cls({ kind: 'feature' }), OPTS);
-    expect(d.reply).toContain('<#777> is the better home');
+  it('tags a question as question + acknowledged, and praise/other as acknowledged only', () => {
+    expect(decide(input('bug-reports'), cls({ kind: 'question' }), OPTS).tags).toEqual(['question', 'acknowledged']);
+    expect(decide(input('bug-reports'), cls({ kind: 'praise' }), OPTS).tags).toEqual(['acknowledged']);
+    expect(decide(input('bug-reports'), cls({ kind: 'other' }), OPTS).tags).toEqual(['acknowledged']);
   });
 
-  it('does not repeat the rationale', () => {
-    const d = decide(input('bug-reports'), cls({ kind: 'question' }), OPTS);
-    expect(d.reply!.split(cls().rationale).length - 1).toBe(1);
-    expect(d.reply).toMatch(/Marked not an issue\.$/);
+  it('never sets not-an-issue itself; that verdict is the owner\'s', () => {
+    for (const kind of ['feature', 'question', 'praise', 'other'] as const) {
+      expect(decide(input('bug-reports'), cls({ kind }), OPTS).tags).not.toContain('not-an-issue');
+    }
   });
 });
 
 describe('decide for a #feedback thread', () => {
-  it('tags the kind and acknowledges', () => {
+  it('tags the kind and acknowledges, silently', () => {
     expect(decide(input('feedback'), cls({ kind: 'feature' }), OPTS).tags).toEqual(['idea', 'acknowledged']);
     expect(decide(input('feedback'), cls({ kind: 'question' }), OPTS).tags).toEqual(['question', 'acknowledged']);
     expect(decide(input('feedback'), cls({ kind: 'praise' }), OPTS).tags).toEqual(['praise', 'acknowledged']);
+    expect(decide(input('feedback'), cls({ kind: 'praise' }), OPTS).reply).toBeNull();
   });
 
   it('acknowledges without a kind tag when the kind has no tag', () => {
@@ -113,10 +109,8 @@ describe('decide on classifier failure', () => {
 });
 
 describe('reply style', () => {
-  it('is at most two sentences', () => {
-    const open: TriageRecord[] = [];
-    const d = decide(input('bug-reports', { openRecords: open }), cls(), OPTS);
-    const sentences = d.reply!.split(/[.?]\s/).filter(Boolean);
-    expect(sentences.length).toBeLessThanOrEqual(2);
+  it('the general-channel reply is one short sentence with the thread placeholder', () => {
+    const d = decide(input('general'), cls(), OPTS);
+    expect(d.reply).toBe('This looks like a bug report, so I opened {thread} for it.');
   });
 });
