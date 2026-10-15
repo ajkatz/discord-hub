@@ -16,7 +16,8 @@ if (!token) {
   console.error('DISCORD_BOT_TOKEN is not set');
   process.exit(2);
 }
-const hub = loadHub(process.env.HUB_PATH ?? 'hub.json');
+const HUB_PATH = process.env.HUB_PATH ?? 'hub.json';
+let hub = loadHub(HUB_PATH);
 const ledger = new Ledger(process.env.TRIAGE_LEDGER ?? 'data/triage.jsonl');
 const classifier = new ClaudeClassifier(process.env.TRIAGE_MODEL ?? 'claude-opus-5-5');
 const api = new RestDiscordApi(token);
@@ -29,6 +30,11 @@ const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`)
 const now = () => new Date().toISOString();
 
 async function refreshChannels(): Promise<void> {
+  try {
+    hub = loadHub(HUB_PATH); // picks up projects added by `discord-hub new` without a restart
+  } catch (e) {
+    log(`hub.json reload failed, keeping the previous one: ${e instanceof Error ? e.message : e}`);
+  }
   channels = buildChannelMap(hub, await api.snapshot(hub.guildId));
   log(`channel map: ${channels.size} channel(s) across ${hub.projects.filter((p) => !p.archived).length} project(s)`);
 }

@@ -183,6 +183,16 @@ describe('set-tags via apply', () => {
   });
 });
 
+describe('fake createEmoji', () => {
+  it('returns the same id for the same name and records one mutation', async () => {
+    const api = new FakeDiscordApi(emptySnapshot());
+    const a = await api.createEmoji(GUILD, 'loadoutlab', 'data:image/png;base64,AAAA');
+    const b = await api.createEmoji(GUILD, 'loadoutlab', 'data:image/png;base64,BBBB');
+    expect(a.id).toBe(b.id);
+    expect(api.mutations.filter((m) => m === 'createEmoji')).toHaveLength(1);
+  });
+});
+
 describe('archive via apply', () => {
   it('renames the category and removes the option, deleting nothing', async () => {
     const { api } = await provision();

@@ -2,6 +2,7 @@ import { REST, DiscordAPIError, HTTPError } from '@discordjs/rest';
 import {
   Routes,
   type APIChannel,
+  type APIEmoji,
   type APIGuildForumChannel,
   type APIGuildOnboarding,
   type APIRole,
@@ -47,6 +48,8 @@ export interface DiscordApi {
   createWebhook(channelId: string, name: string): Promise<{ id: string; token: string }>;
   getOnboarding(guildId: string): Promise<SnapOnboarding>;
   putOnboarding(guildId: string, body: { prompts: PutPrompt[]; default_channel_ids?: string[] }): Promise<void>;
+  /** Uploads a PNG/JPG/GIF as a server emoji (needs Create Expressions); returns the emoji id. Reuses an existing emoji of the same name. */
+  createEmoji(guildId: string, name: string, imageDataUri: string): Promise<{ id: string }>;
 }
 
 export function webhookUrl(id: string, token: string): string {
@@ -139,6 +142,15 @@ export class RestDiscordApi implements DiscordApi {
 
   async putOnboarding(guildId: string, body: { prompts: PutPrompt[]; default_channel_ids?: string[] }): Promise<void> {
     await this.rest.put(Routes.guildOnboarding(guildId), { body });
+  }
+
+  async createEmoji(guildId: string, name: string, imageDataUri: string): Promise<{ id: string }> {
+    const existing = (await this.rest.get(Routes.guildEmojis(guildId))) as APIEmoji[];
+    const have = existing.find((e) => e.name === name);
+    if (have?.id) return { id: have.id };
+    const e = (await this.rest.post(Routes.guildEmojis(guildId), { body: { name, image: imageDataUri }, reason: 'project icon for the onboarding pick-list' })) as APIEmoji;
+    if (!e.id) throw new Error('Discord returned an emoji without an id');
+    return { id: e.id };
   }
 }
 

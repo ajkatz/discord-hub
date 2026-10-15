@@ -67,6 +67,15 @@ describe('discord-hub new', () => {
     expect(r.out).toMatch(/discord-announce\.yml/);
   });
 
+  it('with --icon in snapshot mode reports the emoji it would upload', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hub-'));
+    const hub = join(dir, 'hub.json');
+    copyFileSync(HUB, hub);
+    const r = run(['new', 'katz-stats', '--name', 'KatzStats', '--icon', 'tests/fixtures/icon.png', '--hub', hub, '--snapshot', SNAP]);
+    expect(r.code, r.err).toBe(0);
+    expect(r.out).toMatch(/would upload icon\.png as :katzstats:/);
+  });
+
   it('refuses a duplicate slug', () => {
     const dir = mkdtempSync(join(tmpdir(), 'hub-'));
     const hub = join(dir, 'hub.json');

@@ -103,6 +103,17 @@ export class FakeDiscordApi implements DiscordApi {
     return { id: wh.id, token: wh.token };
   }
 
+  readonly emojis = new Map<string, string>();
+
+  async createEmoji(_guildId: string, name: string, _imageDataUri: string): Promise<{ id: string }> {
+    const have = this.emojis.get(name);
+    if (have) return { id: have };
+    this.guard('createEmoji');
+    const id = this.id();
+    this.emojis.set(name, id);
+    return { id };
+  }
+
   async getOnboarding(_guildId: string): Promise<SnapOnboarding> {
     return clonePrompts(this.onboarding);
   }

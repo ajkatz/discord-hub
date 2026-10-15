@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { basename, extname } from 'node:path';
 import { apply, type ApplyResult } from './apply.js';
 import { RestDiscordApi, type DiscordApi } from './discord.js';
 import { addProject, loadHub, saveHub, type GuildSnapshot, type Hub } from './model.js';
@@ -8,8 +9,9 @@ const USAGE = `usage: discord-hub <command> [options]
 
 commands
   init                       ensure the shared channels + onboarding prompt, then every project
-  new <slug> --name <Name> [--emoji E] [--repo owner/repo]
-                             add a project to hub.json and provision it
+  new <slug> --name <Name> [--emoji E | --icon icon.png] [--repo owner/repo]
+                             add a project to hub.json and provision it; --icon uploads the
+                             image as a server emoji and uses it on the onboarding pick-list
   plan                       print what apply would do (no changes)
   apply                      reconcile the guild with hub.json
   archive <slug>             drop the project from onboarding, rename its category
@@ -36,6 +38,7 @@ interface Args {
   noOnboarding: boolean;
   name?: string;
   emoji?: string;
+  icon?: string;
   repo?: string;
 }
 
@@ -53,6 +56,7 @@ export function parseArgs(argv: string[]): Args {
       case '--snapshot': args.snapshot = takeValue(a, i++); break;
       case '--name': args.name = takeValue(a, i++); break;
       case '--emoji': args.emoji = takeValue(a, i++); break;
+      case '--icon': args.icon = takeValue(a, i++); break;
       case '--repo': args.repo = takeValue(a, i++); break;
       case '--dry-run': args.dryRun = true; break;
       case '--shared': args.shared = true; break;
@@ -80,6 +84,7 @@ class SnapshotApi implements DiscordApi {
   createWebhook(): never { this.refuse(); }
   getOnboarding(): never { this.refuse(); }
   putOnboarding(): never { this.refuse(); }
+  createEmoji(): never { this.refuse(); }
 }
 
 function printOps(ops: Op[], out: (s: string) => void): void {
@@ -166,6 +171,23 @@ export async function main(argv: string[], io = { out: console.log, err: console
       const token = io.env.DISCORD_BOT_TOKEN;
       if (!token) { io.err('DISCORD_BOT_TOKEN is not set; export the bot token or use --snapshot <file> for a dry run'); return 2; }
       api = new RestDiscordApi(token);
+    }
+
+    if (args.command === 'new' && args.icon) {
+      const slug = args.positional[0];
+      const ext = extname(args.icon).toLowerCase().replace('.', '');
+      const mime = ext === 'jpg' ? 'jpeg' : ext;
+      if (!['png', 'jpeg', 'gif'].includes(mime)) throw new Error(`--icon must be a .png, .jpg or .gif (got ${basename(args.icon)})`);
+      const emojiName = slug.replace(/[^a-z0-9]/g, '').slice(0, 32).padEnd(2, '_');
+      if (dryRun) {
+        io.out(`dry-run: would upload ${basename(args.icon)} as :${emojiName}: and use it on the pick-list`);
+      } else {
+        const data = `data:image/${mime};base64,${readFileSync(args.icon).toString('base64')}`;
+        const { id } = await api.createEmoji(hub.guildId, emojiName, data);
+        hub = { ...hub, projects: hub.projects.map((p) => (p.slug === slug ? { ...p, emojiId: id } : p)) };
+        saveHub(args.hub, hub);
+        io.out(`uploaded ${basename(args.icon)} as :${emojiName}: (${id}); emojiId saved to ${args.hub}`);
+      }
     }
 
     const snapshot = await api.snapshot(hub.guildId);

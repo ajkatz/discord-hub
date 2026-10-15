@@ -31,7 +31,7 @@ export DISCORD_BOT_TOKEN=...    # never stored; see docs/runbook.md for the bot 
 
 ```bash
 node bin/discord-hub.mjs init                                    # shared channels + onboarding prompt
-node bin/discord-hub.mjs new loadout-lab --name "Loadout Lab" --emoji 🧪 --repo ajkatz/runelite-loadout-lab
+node bin/discord-hub.mjs new loadout-lab --name "Loadout Lab" --icon icon.png --repo ajkatz/runelite-loadout-lab
 node bin/discord-hub.mjs plan                                    # diff only
 node bin/discord-hub.mjs apply                                   # reconcile everything in hub.json
 node bin/discord-hub.mjs archive loadout-lab                     # drop from onboarding, rename category
@@ -44,6 +44,7 @@ what is missing, so re-running is safe. A project's `emoji` (unicode) or `emojiI
 server emoji id, e.g. the plugin icon uploaded as an emoji) is what members see in the
 onboarding pick-list. Webhook URLs print once and are never written to
 disk. Full setup, migration of the old servers, and the pi deployment: [docs/runbook.md](docs/runbook.md).
+Adding projects from another machine: [docs/handoff-wow.md](docs/handoff-wow.md).
 
 ## Announcer
 
