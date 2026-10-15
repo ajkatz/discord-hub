@@ -3,6 +3,7 @@ import { eqName, type SnapOnboarding, type SnapPrompt } from './model.js';
 export interface DesiredOption {
   title: string;
   emoji?: string;
+  emojiId?: string;
   description?: string;
   roleIds: string[];
   channelIds: string[];
@@ -13,6 +14,7 @@ export interface PutOption {
   id?: string;
   title: string;
   emoji_name?: string;
+  emoji_id?: string;
   description?: string;
   role_ids: string[];
   channel_ids: string[];
@@ -45,7 +47,8 @@ function echoPrompt(p: SnapPrompt): PutPrompt {
     in_onboarding: p.in_onboarding ?? true,
     options: p.options.map((o) => {
       const out: PutOption = { id: o.id, title: o.title, role_ids: [...o.roleIds], channel_ids: [...o.channelIds] };
-      if (o.emoji_name) out.emoji_name = o.emoji_name;
+      if (o.emoji_id) out.emoji_id = o.emoji_id;
+      else if (o.emoji_name) out.emoji_name = o.emoji_name;
       if (o.description) out.description = o.description;
       return out;
     }),
@@ -71,7 +74,8 @@ export function mergeOnboarding(
       target.options.length === desired.length &&
       desired.every((want) => {
         const have = target.options.find((o) => eqName(o.title, want.title));
-        return have !== undefined && sameSet(have.roleIds, want.roleIds) && sameSet(have.channelIds, want.channelIds);
+        const emojiMatch = want.emojiId ? have?.emoji_id === want.emojiId : want.emoji ? (have?.emoji_name ?? null) === want.emoji : true;
+        return have !== undefined && emojiMatch && sameSet(have.roleIds, want.roleIds) && sameSet(have.channelIds, want.channelIds);
       });
     if (inSync) return null;
   }
@@ -87,7 +91,8 @@ export function mergeOnboarding(
       const have = target?.options.find((o) => eqName(o.title, want.title));
       const out: PutOption = { title: want.title, role_ids: [...want.roleIds], channel_ids: [...want.channelIds] };
       if (have) out.id = have.id;
-      if (want.emoji) out.emoji_name = want.emoji;
+      if (want.emojiId) out.emoji_id = want.emojiId;
+      else if (want.emoji) out.emoji_name = want.emoji;
       if (want.description) out.description = want.description;
       return out;
     }),

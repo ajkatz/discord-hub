@@ -131,6 +131,14 @@ describe('plan against a matching guild', () => {
     expect(plan(hub, fullSnapshot(hub))).toEqual([]);
   });
 
+  it('re-plans onboarding when a project gains a custom emoji id', () => {
+    const snap = fullSnapshot(hubWith(LL));
+    const hub = hubWith({ ...LL, emojiId: '424242' });
+    expect(plan(hub, snap).map((o) => o.kind)).toEqual(['upsert-onboarding']);
+    snap.onboarding.prompts[0].options[0].emoji_id = '424242';
+    expect(plan(hub, snap)).toEqual([]);
+  });
+
   it('re-plans onboarding when an option points at a stale role', () => {
     const hub = hubWith(LL);
     const snap = fullSnapshot(hub);

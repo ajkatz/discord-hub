@@ -152,6 +152,7 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
           const desired: DesiredOption[] = op.options.map((o) => ({
             title: o.title,
             emoji: o.emoji,
+            emojiId: o.emojiId,
             roleIds: [res.role(o.role)],
             channelIds: o.channels.map((name) => res.child(o.category, name)),
           }));

@@ -14,6 +14,7 @@ import {
 export interface PlannedOption {
   title: string;
   emoji?: string;
+  emojiId?: string;
   /** Role name (the project slug). */
   role: string;
   /** Category name the member is opted into. */
@@ -99,7 +100,7 @@ export function plan(hub: Hub, snap: GuildSnapshot, opts: PlanOptions = {}): Op[
     const ann = cat ? findChild(snap, cat.id, 'announcements') : undefined;
     const hasWebhook = ann !== undefined && snap.webhooks.some((w) => w.channelId === ann.id && eqName(w.name, WEBHOOK_NAME));
     if (!hasWebhook) webhooks.push({ kind: 'create-webhook', category: d.categoryName, channel: 'announcements', name: WEBHOOK_NAME });
-    desiredOptions.push({ title: p.name, emoji: p.emoji, role: d.roleName, category: d.categoryName, channels: d.channels.map((c) => c.name) });
+    desiredOptions.push({ title: p.name, emoji: p.emoji, emojiId: p.emojiId, role: d.roleName, category: d.categoryName, channels: d.channels.map((c) => c.name) });
   }
 
   if (opts.shared) {
@@ -122,7 +123,8 @@ export function plan(hub: Hub, snap: GuildSnapshot, opts: PlanOptions = {}): Op[
         onboardingDirty = true;
         break;
       }
-      if (!sameSet(have.roleIds, [role.id]) || !sameSet(have.channelIds, childIds as string[])) {
+      const emojiOk = want.emojiId ? have.emoji_id === want.emojiId : true;
+      if (!emojiOk || !sameSet(have.roleIds, [role.id]) || !sameSet(have.channelIds, childIds as string[])) {
         onboardingDirty = true;
         break;
       }

@@ -46,7 +46,7 @@ export function fullSnapshot(hub: Hub): GuildSnapshot {
         snap.webhooks.push(wh);
       }
     }
-    if (!p.archived) options.push({ id: id(), title: p.name, roleIds: [role.id], channelIds: childIds });
+    if (!p.archived) options.push({ id: id(), title: p.name, roleIds: [role.id], channelIds: childIds, emoji_name: p.emoji ?? null, emoji_id: p.emojiId ?? null });
   }
   snap.onboarding.prompts.push({ id: id(), title: hub.onboardingPrompt, options });
   return snap;

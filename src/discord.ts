@@ -69,6 +69,7 @@ export function mapOnboarding(o: APIGuildOnboarding): SnapOnboarding {
         roleIds: [...opt.role_ids],
         channelIds: [...opt.channel_ids],
         emoji_name: opt.emoji?.name ?? null,
+        emoji_id: opt.emoji?.id ?? null,
         description: opt.description ?? null,
       })),
     })),

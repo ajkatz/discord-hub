@@ -4,7 +4,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 export interface ProjectConfig {
   slug: string;
   name: string;
+  /** Unicode emoji for the onboarding option; ignored when emojiId is set. */
   emoji?: string;
+  /** Custom (server) emoji id for the onboarding option, e.g. the plugin's icon uploaded as an emoji. */
+  emojiId?: string;
   repo?: string;
   archived?: boolean;
 }
@@ -33,6 +36,7 @@ export interface DesiredProject {
   slug: string;
   name: string;
   emoji?: string;
+  emojiId?: string;
   archived: boolean;
   roleName: string;
   categoryName: string;
@@ -62,6 +66,7 @@ export function desiredFor(p: ProjectConfig): DesiredProject {
     slug: p.slug,
     name: p.name,
     emoji: p.emoji,
+    emojiId: p.emojiId,
     archived,
     roleName: p.slug,
     categoryName: archived ? ARCHIVED_PREFIX + p.name : p.name,
@@ -140,6 +145,7 @@ export interface SnapOption {
   roleIds: string[];
   channelIds: string[];
   emoji_name?: string | null;
+  emoji_id?: string | null;
   description?: string | null;
 }
 export interface SnapPrompt {

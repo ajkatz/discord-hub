@@ -54,9 +54,17 @@ describe('mergeOnboarding with an existing prompt', () => {
     expect(mergeOnboarding(current, TITLE, [{ ...gp, channelIds: ['c3'] }])).toBeNull();
     const twoChannels: SnapOnboarding = {
       enabled: true,
-      prompts: [{ id: '10', title: TITLE, options: [{ id: '11', title: 'Loadout Lab', roleIds: ['r1'], channelIds: ['c2', 'c1'] }] }],
+      prompts: [{ id: '10', title: TITLE, options: [{ id: '11', title: 'Loadout Lab', roleIds: ['r1'], channelIds: ['c2', 'c1'], emoji_name: '🧪' }] }],
     };
     expect(mergeOnboarding(twoChannels, TITLE, [ll])).toBeNull();
+  });
+
+  it('prefers a custom emoji id over a unicode emoji, and re-syncs when the emoji changes', () => {
+    const out = mergeOnboarding(current, TITLE, [{ ...gp, emoji: '🎯', emojiId: '424242' }])!;
+    expect(out[0].options[0]).toMatchObject({ id: '11', emoji_id: '424242' });
+    expect('emoji_name' in out[0].options[0]).toBe(false);
+    const synced: SnapOnboarding = { enabled: true, prompts: [{ id: '10', title: TITLE, options: [{ id: '11', title: 'Goal Planner', roleIds: ['r2'], channelIds: ['c3'], emoji_id: '424242' }] }] };
+    expect(mergeOnboarding(synced, TITLE, [{ ...gp, emojiId: '424242' }])).toBeNull();
   });
 
   it('drops an option that is no longer desired', () => {
