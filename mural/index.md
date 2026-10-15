@@ -4,6 +4,9 @@
 ## adr
 - ADR-0001 — discord-hub seeded from the mural kernel template [active] (mural/decisions/0001-seeded-from-mural-kernel.md)
 
+## asm
+- ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [unvalidated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
+
 ## evergreen
 - DOC-borders — Blueprint — walls and cavities of discord-hub [active] (mural/engineering/borders.md)
 - DOC-design-system — Design system — kernel surfaces [active] (mural/design/system.md)
@@ -11,6 +14,12 @@
 - DOC-manual — Manual — discord-hub [active] (mural/manual/index.md)
 - DOC-reuse-registry — Reuse registry — discord-hub [active] (mural/reuse/registry.md)
 - DOC-vision — Vision — discord-hub [active] (mural/product/vision.md)
+
+## issue
+- ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [draft] (mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md)
+- ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [draft] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
+- ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [draft] (mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md)
+- ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [draft] (mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural/process/playbooks/armament.md)
@@ -21,3 +30,9 @@
 - DOC-retro-template — Retro template — ledger numbers, stimulators, detractors, graded interventions [active] (mural/process/playbooks/retro-template.md)
 - DOC-security — Security playbook — sacred privacy, defended org (standards pinned 2026-08) [active] (mural/process/playbooks/security.md)
 - DOC-stewardship — Stewardship — pro-revenue, anti-extraction [active] (mural/process/playbooks/stewardship.md)
+
+## prd
+- PRD-01M4YRFMPVGJJ0XENSA97NBGBW — discord-hub — one server, one sub-community per plugin, spawned by CLI [draft] (mural/product/PRD-01M4YRFMPVGJJ0XENSA97NBGBW-discord-hub.md)
+
+## scan
+- RS-01M4YRFMRKKVE1W27FR16BP0FD — Discord sub-community provisioning — opt-in is native, reconciliation is not [active] (mural/reuse/scans/RS-01M4YRFMRKKVE1W27FR16BP0FD-discord-provisioning-prior-art.md)
