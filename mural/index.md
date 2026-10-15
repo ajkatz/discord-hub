@@ -8,6 +8,9 @@
 ## asm
 - ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
 
+## co
+- CO-01M50HBW4FGVWW46SFDG3SGP1B — PRD v3 -> v4 — reconcile the requirements with what shipped on 2026-10-14/15 [active] (mural/changes/CO-01M50HBW4FGVWW46SFDG3SGP1B-prd-v4-reconciliation.md)
+
 ## evergreen
 - DOC-borders — Blueprint — walls and cavities of discord-hub [active] (mural/engineering/borders.md)
 - DOC-design-system — Design system — kernel surfaces [active] (mural/design/system.md)
@@ -27,6 +30,17 @@
 - ISS-01M4YS4JPD4GTYTH3BC87FY61Q — triage bot — classify, tag status, acknowledge, ledger; bug threads from #general [done] (mural/issues/ISS-01M4YS4JPD4GTYTH3BC87FY61Q/spec.md)
 - ISS-01M4YS4JR84N865A2GE202351A — announcer — reusable push-summary workflow + caller template [done] (mural/issues/ISS-01M4YS4JR84N865A2GE202351A/spec.md)
 - ISS-01M4YS4JT1NBYWK02Q0X4XHT4G — pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section [done] (mural/issues/ISS-01M4YS4JT1NBYWK02Q0X4XHT4G/spec.md)
+- ISS-01M50HBV6NCCMT1TCCCYEGD1EY — bot self-overwrite — apply grants the bot a member overwrite on every category and child [draft] (mural/issues/ISS-01M50HBV6NCCMT1TCCCYEGD1EY/spec.md)
+- ISS-01M50HBV8MWYWE7AYH7NG7W7AX — cli --no-onboarding — plan/apply/new/init leave the onboarding prompt alone [draft] (mural/issues/ISS-01M50HBV8MWYWE7AYH7NG7W7AX/spec.md)
+- ISS-01M50HBVACSZN74PWSES9DYY05 — forum guidelines + announcements topic — set-topic op reconciles existing channels [draft] (mural/issues/ISS-01M50HBVACSZN74PWSES9DYY05/spec.md)
+- ISS-01M50HBVC51E683DF67K2RD058 — silent triage — tags are the answer; kind tags; set-tags op adds missing forum tags [draft] (mural/issues/ISS-01M50HBVC51E683DF67K2RD058/spec.md)
+- ISS-01M50HBVDXP28V5RR9AB9XYWRV — one #feedback forum per project — kind + status tags; #bug-reports removed [draft] (mural/issues/ISS-01M50HBVDXP28V5RR9AB9XYWRV/spec.md)
+- ISS-01M50HBVFMAQKAMG2HEBC3AGP7 — onboarding options carry a custom emoji id — hub.json emojiId, emoji_id in the PUT [draft] (mural/issues/ISS-01M50HBVFMAQKAMG2HEBC3AGP7/spec.md)
+- ISS-01M50HBVHAXN1P5TN8HX0BQ8N7 — onboarding PUT carries the seven shared channels as default_channel_ids [draft] (mural/issues/ISS-01M50HBVHAXN1P5TN8HX0BQ8N7/spec.md)
+- ISS-01M50HBVK4SF3SD203P4ADTV4D — new --icon — upload the project icon as a server emoji for the pick-list [draft] (mural/issues/ISS-01M50HBVK4SF3SD203P4ADTV4D/spec.md)
+- ISS-01M50HBVMWMACX1JZ9WTAPPRF0 — bot reloads hub.json on every channel-map refresh [draft] (mural/issues/ISS-01M50HBVMWMACX1JZ9WTAPPRF0/spec.md)
+- ISS-01M50HBVPQQW1P0YNM7AP6ZXZD — announce.yml — quote input descriptions; test parses both workflow files [draft] (mural/issues/ISS-01M50HBVPQQW1P0YNM7AP6ZXZD/spec.md)
+- ISS-01M50HBVRFPJCRQBC5XV8KR7QR — docs — handoff note for provisioning from another machine [draft] (mural/issues/ISS-01M50HBVRFPJCRQBC5XV8KR7QR/spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural/process/playbooks/armament.md)
