@@ -55,5 +55,8 @@
 ## prd
 - PRD-01M4YRFMPVGJJ0XENSA97NBGBW — discord-hub — one server, one sub-community per plugin, spawned by CLI [draft] (mural/product/PRD-01M4YRFMPVGJJ0XENSA97NBGBW-discord-hub.md)
 
+## retro
+- RETRO-001 — R-001 — founding day and the live-iteration evening (2026-10-14/15) [active] (mural/process/retros/RETRO-001.md)
+
 ## scan
 - RS-01M4YRFMRKKVE1W27FR16BP0FD — Discord sub-community provisioning — opt-in is native, reconciliation is not [active] (mural/reuse/scans/RS-01M4YRFMRKKVE1W27FR16BP0FD-discord-provisioning-prior-art.md)
