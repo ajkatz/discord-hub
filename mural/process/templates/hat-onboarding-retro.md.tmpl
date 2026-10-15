@@ -1,0 +1,35 @@
+---
+id: <ISS-mint-with-mural-new>
+type: issue
+status: draft
+owner: pm
+title: RETRO — grade the onboarding methods
+version: 1
+upstream: [<PRD-onboard-id>@1]
+derives_from: []
+depends: [<all-five-hat-issue-ids>]
+paths: [mural/process/retros/RETRO-001.md]
+acceptance: [scripts/mural check, grep -qi verdict mural/process/retros/RETRO-001.md]
+cw_tokens: <estimate>
+cw_files: 1
+phase: finish
+model: mid
+max_turns: 25
+method: retro-synthesis
+cost_tokens: 0
+cost_minutes: 0
+claims_checked: 0
+claims_verified: 0
+claims_failed: 0
+dead_ends: 0
+anchors_laid: 0
+sources_graded: 0
+method_notes: <one line at done-time>
+---
+## Contract
+
+Consume the five hat issues' instrumentation keys + the ledger. Produce
+RETRO-001 with: per-method yield (claims_verified/cost_tokens), precision
+(claims_verified/claims_checked), dead-end rate; keep/adapt/drop verdict per
+method; source-grading summary from mural/imports/sources.md; and mint the
+kernel playbook-update issue (strict dogfood — the harvest is itself gated).

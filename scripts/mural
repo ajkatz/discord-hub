@@ -1,0 +1,2205 @@
+#!/usr/bin/env python3
+"""mural — the Mural kernel CLI. Every gate is an exit code.
+
+Exit codes: 0 = pass, 1 = gate/validation failure, 2 = usage error, 3 = live step skipped.
+"""
+import csv, hashlib, json, os, re, shlex, shutil, subprocess, sys, time
+from pathlib import Path
+import pathlib
+
+ROOT = Path(__file__).resolve().parent.parent
+MURAL = ROOT / "mural"
+
+def ledger_path():
+    return Path(os.environ.get("MURAL_LEDGER") or (MURAL / "process" / "ledger.jsonl"))
+
+STATUSES = {"draft", "active", "ready", "in-progress", "blocked", "disputed",
+            "stale", "superseded", "done", "unvalidated", "validated", "falsified"}
+OWNERS = {"pm", "design", "eng", "qa", "platform", "user"}
+PHASES = {"breadth", "finish"}
+COMMON = ["id", "type", "status", "owner", "title", "version"]
+REQUIRED = {
+    "prd":      COMMON + ["open_questions"],
+    "des":      COMMON + ["upstream"],
+    "issue":    COMMON + ["upstream", "derives_from", "paths", "acceptance",
+                          "cw_tokens", "cw_files", "phase"],
+    "adr":      COMMON,
+    "finding":  COMMON + ["evidence", "invalidates"],
+    "co":       COMMON + ["bumps"],
+    "scan":     COMMON + ["verdict"],
+    "qp":       COMMON + ["upstream"],
+    "asm":      COMMON,
+    "evergreen": COMMON,
+    "playbook": COMMON,
+    "retro": COMMON,
+}
+NEW_DIRS = {"prd": "product", "des": "design", "finding": "findings", "co": "changes",
+            "scan": "reuse/scans", "qp": "qa/plans", "asm": "assumptions"}
+NEW_PREFIX = {"prd": "PRD", "des": "DES", "issue": "ISS", "finding": "F", "co": "CO",
+              "scan": "RS", "qp": "QP", "asm": "ASM"}
+GENERATED = {"index.md", "DECISIONS.md", "packet.md", "map.md", "blueprint.json", "sources.md"}
+# Generated artifacts live at KNOWN paths. Matching bare basenames instead hid
+# mural/manual/index.md from the registry entirely — the manual layer could rot
+# with no gate noticing, in this repo and every seeded one.
+GENERATED_PATHS = {"index.md", "decisions/DECISIONS.md", "map.md",
+                   "blueprint.json", "imports/sources.md"}
+# TEMPORARY (2026-09-17, Andrew: "limp through 0.5.2 then do a real fix"): 4000 -> 6000
+# until the index design lands - see F-01M2RK6NREWMJ32QN27CTE28YV. Not a fix.
+INDEX_TOKEN_CAP = 6000
+CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
+def ulid():
+    """Time-sortable: 10 time chars (MSB first) + 16 random chars."""
+    t = int(time.time() * 1000)
+    tc = []
+    for _ in range(10):
+        tc.append(CROCKFORD[t & 31]); t >>= 5
+    rnd = int.from_bytes(os.urandom(10), "big")
+    rc = []
+    for _ in range(16):
+        rc.append(CROCKFORD[rnd & 31]); rnd >>= 5
+    return "".join(reversed(tc)) + "".join(reversed(rc))
+
+def ledger_log(event, **kw):
+    try:
+        lp = ledger_path()
+        lp.parent.mkdir(parents=True, exist_ok=True)
+        with lp.open("a") as f:
+            f.write(json.dumps({"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                                "event": event, **kw}) + "\n")
+    except Exception:
+        pass
+
+# ---------- frontmatter (flat subset: strings, ints, one-line lists) ----------
+
+def unquote(s):
+    """Strip surrounding quotes only when fully wrapped in a matching pair —
+    interior quotes (bash -c '...') must survive (field bug, PM hat 2026-08-22)."""
+    if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'":
+        return s[1:-1]
+    return s
+
+
+def parse_value(raw):
+    raw = raw.strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        inner = raw[1:-1].strip()
+        if not inner:
+            return []
+        try:
+            items = next(csv.reader([inner], skipinitialspace=True))
+        except Exception:
+            items = inner.split(",")
+        return [unquote(v.strip()) for v in items if v.strip()]
+    if re.fullmatch(r"-?\d+", raw):
+        return int(raw)
+    return unquote(raw)
+
+def parse_text(text):
+    if not text.startswith("---\n"):
+        return None, text, []
+    end = text.find("\n---", 4)
+    if end == -1:
+        return None, text, ["unterminated frontmatter"]
+    fm, errs, order = {}, [], []
+    for line in text[4:end].splitlines():
+        if not line.strip() or line.strip().startswith("#"):
+            continue
+        if ":" not in line:
+            errs.append(f"bad frontmatter line: {line!r}"); continue
+        k, v = line.split(":", 1)
+        fm[k.strip()] = parse_value(v)
+        order.append(k.strip())
+    fm["_order"] = order
+    return fm, text[end + 4:], errs
+
+def parse_doc(path):
+    return parse_text(path.read_text())
+
+def serialize(fm, body):
+    lines = ["---"]
+    order = fm.get("_order", [])
+    keys = order + [k for k in fm if k not in order and not k.startswith("_")]
+    for k in keys:
+        if k.startswith("_") or k not in fm:
+            continue
+        v = fm[k]
+        if isinstance(v, list):
+            lines.append(f"{k}: [{', '.join(str(x) for x in v)}]")
+        else:
+            lines.append(f"{k}: {v}")
+    lines.append("---")
+    return "\n".join(lines) + body
+
+def load_registry():
+    reg, errors = {}, []
+    for path in sorted(MURAL.rglob("*.md")):
+        rel_mural = path.relative_to(MURAL).as_posix()
+        if (rel_mural in GENERATED_PATHS or path.name == "packet.md"
+                or path.name == ".gitkeep" or "/gate/" in f"/{rel_mural}"):
+            continue
+        fm, body, errs = parse_doc(path)
+        rel = path.relative_to(ROOT)
+        if fm is None:
+            errors.append(f"{rel}: missing frontmatter"); continue
+        for e in errs:
+            errors.append(f"{rel}: {e}")
+        did = fm.get("id")
+        if not did:
+            errors.append(f"{rel}: missing id"); continue
+        if did in reg:
+            errors.append(f"{rel}: duplicate id {did} (also {reg[did][0].relative_to(ROOT)})")
+        reg[did] = (path, fm, body)
+    return reg, errors
+
+def bare(ref):
+    return ref.split("@")[0]
+
+def pin_version(ref):
+    return int(ref.split("@")[1]) if "@" in ref and ref.split("@")[1].isdigit() else None
+
+def pin_errors(reg, fm, label):
+    """Version pins must match the upstream doc's CURRENT version."""
+    errs = []
+    for ref in fm.get("upstream", []) or []:
+        want = pin_version(ref)
+        up = reg.get(bare(ref))
+        if want is not None and up is not None:
+            have = up[1].get("version")
+            if have != want:
+                errs.append(f"{label} PIN-STALE upstream {ref}: doc is now version {have} "
+                            f"(file a change-order disposition or re-pin)")
+    return errs
+
+# ---------- validation ----------
+
+def validate_doc(rel, fm, body, reg):
+    errs = []
+    dtype = fm.get("type")
+    if dtype not in REQUIRED:
+        errs.append(f"{rel}: unknown type {dtype!r}"); return errs
+    for k in REQUIRED[dtype]:
+        if k not in fm:
+            errs.append(f"{rel}: missing required key '{k}' for type {dtype}")
+    if fm.get("status") not in STATUSES:
+        errs.append(f"{rel}: illegal status {fm.get('status')!r}")
+    if fm.get("owner") not in OWNERS:
+        errs.append(f"{rel}: illegal owner {fm.get('owner')!r}")
+    if dtype == "issue" and fm.get("phase") not in PHASES:
+        errs.append(f"{rel}: illegal phase {fm.get('phase')!r}")
+    for key in ("upstream", "derives_from", "depends", "assumes"):
+        for ref in fm.get(key, []) if isinstance(fm.get(key), list) else []:
+            if bare(ref) not in reg:
+                errs.append(f"{rel}: {key} ref '{ref}' does not resolve")
+    if dtype == "issue":
+        for ref in fm.get("upstream", []):
+            if "@" not in ref:
+                errs.append(f"{rel}: upstream '{ref}' is not version-pinned (want ID@N)")
+    return errs
+
+def build_index(reg):
+    groups = {}
+    for did, (path, fm, _b) in reg.items():
+        groups.setdefault(fm.get("type", "?"), []).append(
+            f"- {did} — {fm.get('title','?')} [{fm.get('status','?')}] ({path.relative_to(ROOT)})")
+    lines = ["<!-- GENERATED by `scripts/mural index` — do not hand-edit -->",
+             "# Mural index", ""]
+    for t in sorted(groups):
+        lines.append(f"## {t}")
+        lines.extend(sorted(groups[t]))
+        lines.append("")
+    return "\n".join(lines)
+
+def build_decisions_index(reg):
+    lines = ["<!-- GENERATED by `scripts/mural index` — do not hand-edit -->",
+             "# Decisions", ""]
+    for did in sorted(k for k, v in reg.items() if v[1].get("type") == "adr"):
+        path, fm, _ = reg[did]
+        lines.append(f"- {did} — {fm.get('title')} [{fm.get('status')}] ({path.name})")
+    return "\n".join(lines) + "\n"
+
+def regen_index(reg=None, quiet=True):
+    if reg is None:
+        reg, _ = load_registry()
+    idx = build_index(reg)
+    tokens = len(idx) // 4
+    if tokens > INDEX_TOKEN_CAP:
+        print(f"FAIL index would be ~{tokens} tokens (cap {INDEX_TOKEN_CAP}) — "
+              f"shard into per-module sub-murals; index NOT written", file=sys.stderr)
+        return None
+    (MURAL / "index.md").write_text(idx)
+    (MURAL / "decisions" / "DECISIONS.md").write_text(build_decisions_index(reg))
+    if not quiet:
+        print(f"index written: {len(reg)} docs, ~{tokens} tokens (cap {INDEX_TOKEN_CAP})")
+    return tokens
+
+# ---------- commands ----------
+
+def cmd_index(_args):
+    reg, _ = load_registry()
+    return 0 if regen_index(reg, quiet=False) is not None else 1
+
+def cmd_check(args):
+    if args and args[0] == "--file":
+        path = Path(args[1])
+        if not path.is_absolute():
+            path = ROOT / path
+        if not path.exists():
+            print(f"{path}: no such file", file=sys.stderr); return 1
+        fm, body, errs = parse_doc(path)
+        if fm is None:
+            print(f"{path}: missing frontmatter", file=sys.stderr); return 1
+        reg, _ = load_registry()
+        errs += validate_doc(path.name, fm, body, reg)
+        for e in errs: print(e, file=sys.stderr)
+        return 1 if errs else 0
+    reg, errors = load_registry()
+    for did, (path, fm, body) in reg.items():
+        errors += validate_doc(path.relative_to(ROOT), fm, body, reg)
+    for did, (path, fm, body) in reg.items():
+        if fm.get("status") in {"done", "superseded"}:
+            continue
+        for a in fm.get("assumes", []) or []:
+            dep = reg.get(bare(a))
+            if dep and dep[1].get("status") == "falsified":
+                errors.append(f"{path.relative_to(ROOT)}: leans on FALSIFIED assumption {bare(a)} "
+                              f"— unwind the thread (prune or re-validate)")
+    a_errs, flipped = anchor_errors(reg, autoflip=True)
+    errors += a_errs
+    for f in flipped:
+        print(f"auto-flipped stale: {f} (re-verify with `mural anchor`)", file=sys.stderr)
+    if flipped:
+        reg, _ = load_registry()
+    current = MURAL / "index.md"
+    fresh = build_index(reg)
+    if not current.exists() or current.read_text() != fresh:
+        errors.append("mural/index.md is stale — run `scripts/mural index`")
+    elif len(fresh) // 4 > INDEX_TOKEN_CAP:
+        errors.append(f"mural/index.md exceeds token cap ({len(fresh)//4} > {INDEX_TOKEN_CAP}) — shard")
+    for e in errors:
+        print(e, file=sys.stderr)
+    print(f"check: {len(reg)} docs, {len(errors)} error(s)")
+    return 1 if errors else 0
+
+def closure(reg, seed_ids, exclude):
+    seen, order, cycles = set(), [], []
+    def visit(i, trail):
+        if i in trail:
+            cycles.append(" -> ".join(trail + [i])); return
+        if i in seen or i not in reg:
+            return
+        seen.add(i)
+        for ref in (reg[i][1].get("derives_from") or []) + (reg[i][1].get("upstream") or []):
+            visit(bare(ref), trail + [i])
+        order.append(i)
+    for s in seed_ids:
+        visit(bare(s), [])
+    return [o for o in order if o not in exclude], cycles
+
+def contract_of_record(fm):
+    rows = ["## Contract of record (from frontmatter — the enforced envelope)", ""]
+    manifest = ", ".join(
+        f"{p} ({'EXISTS — modify only if the contract says so' if (ROOT / p.rstrip('/*')).exists() else 'NEW — a deliverable'})"
+        for p in (fm.get("paths") or []))
+    rows.append(f"- write-set manifest (only paths you may touch): {manifest}")
+    rows.append(f"- acceptance commands (must exit 0 for done): {fm.get('acceptance')}")
+    rows.append(f"- upstream pins: {fm.get('upstream')}  |  depends: {fm.get('depends', [])}")
+    rows.append(f"- budget: model={fm.get('model','default')} max_turns={fm.get('max_turns','default')} "
+                f"cw_tokens={fm.get('cw_tokens')} cw_files={fm.get('cw_files')} phase={fm.get('phase')}")
+    rows.append("- report exactly one status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED — proof lives in receipts, not your report.\n- if any decision is not answerable from this packet: write blocked.md "
+                "with the question + a proposed default, and stop.")
+    return "\n".join(rows)
+
+def write_packet(reg, iid):
+    path, fm, body = reg[iid]
+    deps, cycles = closure(reg, (fm.get("derives_from") or []) + (fm.get("upstream") or []), exclude={iid})
+    for c in cycles:
+        print(f"WARN derives_from cycle: {c}", file=sys.stderr)
+    parts = [f"<!-- GENERATED packet for {iid} — the worker's entire briefing -->",
+             f"# Packet: {fm.get('title')}", "", contract_of_record(fm), "",
+             "## Task", body.strip(), ""]
+    for did in deps:
+        _p, dfm, dbody = reg[did]
+        parts += [f"## Context: {did} — {dfm.get('title')} [{dfm.get('status')}]", dbody.strip(), ""]
+    src_hash = hashlib.sha256("\n".join(parts).encode()).hexdigest()[:16]
+    parts.insert(1, f"<!-- source-hash: {src_hash} -->")
+    out = path.parent / "packet.md"
+    out.write_text("\n".join(parts))
+    return out, len(deps), src_hash
+
+def cmd_packet(args):
+    if not args: print("usage: mural packet ISS-<id>", file=sys.stderr); return 2
+    reg, _ = load_registry()
+    iid = args[0]
+    if iid not in reg: print(f"unknown issue {iid}", file=sys.stderr); return 1
+    out, ndeps, h = write_packet(reg, iid)
+    print(f"packet written: {out.relative_to(ROOT)} ({ndeps} context docs, hash {h})")
+    return 0
+
+PLACEHOLDER_RE = re.compile(r"\bTBD\b|\bTODO\b|\?\?\?|\bFIXME\b")
+
+TEMPLATE_BLANKS = frozenset({
+    "<claim>", "<trigger>", "<behavior>", "<state>", "<action>", "<outcome>",
+    "<exact interface / behavior>", "<how we will validate or falsify>",
+    "<what exists off the shelf — incl. AI skills and MCP servers — and why we build anyway>",
+    "<default / empty / loading / error / edge>", "<criterion -> runnable check>", "<fill in>",
+})  # curated, not harvested: generic notation like <id>/<status> must never flag
+
+def template_blanks():
+    return TEMPLATE_BLANKS
+
+def dor_errors(fm, body):
+    errs, dtype = [], fm.get("type")
+    if dtype in {"prd", "des", "issue"}:
+        hits = sorted(set(PLACEHOLDER_RE.findall(body)))
+        hits += sorted(b for b in template_blanks() if b in body)
+        if hits:
+            errs.append(f"DOR-FAIL field=placeholders: unresolved {hits} — a spec with blanks is not a spec")
+    if dtype == "prd":
+        if fm.get("open_questions"):
+            errs.append("DOR-FAIL field=open_questions: must be empty to be ready")
+        if "## Requirements" not in body or "SHALL" not in body:
+            errs.append("DOR-FAIL field=requirements: need '## Requirements' with EARS SHALL lines")
+        if "## Acceptance" not in body or "Given" not in body:
+            errs.append("DOR-FAIL field=acceptance: need '## Acceptance' with Given/When/Then")
+        if "## Build-vs-adopt" not in body:
+            errs.append("DOR-FAIL field=build-vs-adopt: mandatory scan section missing (Law 4)")
+        if "## Non-goals" not in body:
+            errs.append("DOR-FAIL field=non-goals: missing")
+    elif dtype == "issue":
+        if "## Contract" not in body:
+            errs.append("DOR-FAIL field=contract: need '## Contract' section")
+        if not fm.get("acceptance"):
+            errs.append("DOR-FAIL field=acceptance: no runnable acceptance commands")
+        if not fm.get("paths"):
+            errs.append("DOR-FAIL field=paths: no declared write-set")
+        if not isinstance(fm.get("cw_tokens"), int) or fm.get("cw_tokens", 0) <= 0:
+            errs.append("DOR-FAIL field=cw_tokens: numeric CW estimate required (> 0)")
+    elif dtype == "des":
+        if not fm.get("upstream"):
+            errs.append("DOR-FAIL field=upstream: design spec must pin its PRD")
+        if "## States" not in body:
+            errs.append("DOR-FAIL field=states: enumerate every state (default/empty/loading/error/edge)")
+        if "## Out-of-scope" not in body:
+            errs.append("DOR-FAIL field=out-of-scope: missing")
+    elif dtype == "adr":
+        for h in ("## Context", "## Decision", "## Considered options", "## Consequences"):
+            if h not in body:
+                errs.append(f"DOR-FAIL field={h.strip('# ').lower()}: MADR section missing")
+    else:
+        errs.append(f"DOR-FAIL no DoR schema for type '{dtype}' — cannot certify ready")
+    return errs
+
+def probe_acceptance(cmdline):
+    """Best-effort existence probe; skipped for compound/shell-heavy commands."""
+    if any(m in cmdline for m in ("&&", "||", "|", ";", ">", "<")):
+        return None
+    try:
+        toks = shlex.split(cmdline)
+    except ValueError:
+        return f"unparseable acceptance command: {cmdline!r}"
+    toks = [t for t in toks if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", t)]
+    if not toks:
+        return None
+    probe = toks[1] if toks[0] in {"bash", "sh", "python3", "python", "env"} and len(toks) > 1 else toks[0]
+    if (ROOT / probe).exists() or shutil.which(probe):
+        return None
+    return f"acceptance command not found: {cmdline!r}"
+
+def governed_errors(fm):
+    """K3 governed scope: absent governed.txt = everything governed (greenfield).
+
+    With governed.txt present, an issue's write-set path is governed if it matches
+    a listed prefix OR did not exist at the baseline commit (new code is always
+    governed). Ungoverned paths fail DoR, instructing strangler absorption.
+    """
+    gov = MURAL / "engineering" / "governed.txt"
+    if not gov.exists() or fm.get("type") != "issue":
+        return []
+    prefixes, baseline = [], None
+    for line in gov.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        m = re.match(r"#\s*baseline:\s*([0-9a-f]{7,40})", line)
+        if m:
+            baseline = m.group(1)
+            continue
+        if line.startswith("#"):
+            continue
+        prefixes.append(line[:-3] if line.endswith("/**") else line)
+
+    def governed(path):
+        if any(path == pre or path.startswith(pre.rstrip("/") + "/") or path.startswith(pre)
+               for pre in prefixes):
+            return True
+        if baseline:
+            r = subprocess.run(["git", "-C", str(ROOT), "cat-file", "-e",
+                                f"{baseline}:{path}"], capture_output=True)
+            return r.returncode != 0  # absent at baseline = new code = governed
+        return False
+
+    errs = []
+    for path in fm.get("paths", []) or []:
+        if not governed(path):
+            errs.append(f"DOR-FAIL path {path}: not governed — add its prefix to "
+                        f"mural/engineering/governed.txt in this issue (absorption on touch)")
+    return errs
+
+
+def anchor_coverage_errors(reg, fm):
+    """A write-set that changes an anchored file must include the doc that anchors it.
+
+    Otherwise `done` records a receipt and the commit blocks on ANCHOR-STALE, with
+    no way for the worker to re-anchor (re-anchoring writes the doc's frontmatter,
+    which its write-set forbids). Field cost: FestCal 2026-08-22, one whole
+    follow-up issue. Kernel has no anchors, so this binds onboarded repos only.
+    """
+    if fm.get("type") != "issue":
+        return []
+    writeset = fm.get("paths") or []
+
+    def covered(f):
+        for o in writeset:
+            o = o.rstrip("/*")
+            if f == o or f.startswith(o.rstrip("/") + "/"):
+                return True
+        return False
+
+    errs = []
+    for path in writeset:
+        target = path.rstrip("/*")
+        for did, (doc_path, doc_fm, _) in reg.items():
+            for anchor in doc_fm.get("anchors") or []:
+                anchored = anchor.rsplit("@", 1)[0]
+                if not (anchored == target or anchored.startswith(target.rstrip("/") + "/")):
+                    continue
+                try:
+                    rel = str(doc_path.relative_to(ROOT))
+                except ValueError:
+                    continue
+                if not covered(rel):
+                    errs.append(
+                        f"READY-FAIL {did} anchors {anchored}, which this write-set "
+                        f"changes — add {rel} to paths (the worker must be able to "
+                        f"re-anchor it, or done blocks on ANCHOR-STALE)")
+    return sorted(set(errs))
+
+
+def cmd_gate_ratchet():
+    """K6: Betterer-style improves-only snapshot of brownfield progress metrics.
+
+    Metrics: anchored_paths (distinct anchored files across docs), ungraded_sources
+    (registered, zero claims), stale_docs. Regression vs the checked-in snapshot
+    exits 1; improvement rewrites (auto-tightens) it. Progress metric only — never
+    an enforcement primitive (ADR-0021 fork D).
+    """
+    reg, _ = load_registry()
+    anchored = set()
+    stale = 0
+    for _, (path, fm, body) in reg.items():
+        for a in fm.get("anchors") or []:
+            anchored.add(a.rsplit("@", 1)[0])
+        if fm.get("status") == "stale":
+            stale += 1
+    events = _source_events()
+    srcs = {e["src"] for e in events if e["event"] == "source.add"}
+    claimed = {e["src"] for e in events if e["event"] == "source.claim"}
+    now = {"anchored_paths": len(anchored), "ungraded_sources": len(srcs - claimed),
+           "stale_docs": stale}
+    snap_p = MURAL / "engineering" / "ratchet.json"
+    if not snap_p.exists():
+        snap_p.write_text(json.dumps(now, indent=2) + "\n")
+        print(f"gate ratchet: PASS (snapshot created: {now})")
+        return 0
+    snap = json.loads(snap_p.read_text())
+    worse = []
+    if now["anchored_paths"] < snap.get("anchored_paths", 0):
+        worse.append(f"anchored_paths {snap['anchored_paths']} -> {now['anchored_paths']}")
+    if now["ungraded_sources"] > snap.get("ungraded_sources", 0):
+        worse.append(f"ungraded_sources {snap['ungraded_sources']} -> {now['ungraded_sources']}")
+    if now["stale_docs"] > snap.get("stale_docs", 0):
+        worse.append(f"stale_docs {snap['stale_docs']} -> {now['stale_docs']}")
+    if worse:
+        for w in worse:
+            print(f"RATCHET-FAIL {w}", file=sys.stderr)
+        print("gate ratchet: FAIL")
+        return 1
+    if now != snap:
+        snap_p.write_text(json.dumps(now, indent=2) + "\n")
+        print(f"gate ratchet: PASS (tightened: {now})")
+    else:
+        print(f"gate ratchet: PASS ({now})")
+    ledger_log("gate-ratchet", **now)
+    return 0
+
+
+FOUNDING_DOCS = ["DOC-vision", "DOC-borders", "DOC-design-system", "DOC-qa-strategy"]
+
+def cmd_gate_onboard():
+    """K8: campaign-completion truth (DES stage 4). Exit 0 only when the founding
+    docs are active + anchored, a security finding exists, every registered source
+    is graded, no quarantined claim appears in a packet, and the ratchet snapshot
+    is armed."""
+    reg, _ = load_registry()
+    errs = []
+    for did in FOUNDING_DOCS:
+        if did not in reg:
+            errs.append(f"founding doc missing: {did}")
+            continue
+        _, fm, _ = reg[did]
+        if fm.get("status") != "active":
+            errs.append(f"{did}: status {fm.get('status')!r}, need active")
+        if not fm.get("anchors"):
+            errs.append(f"{did}: no anchors — understanding is not tied to code")
+    if not any(fm.get("type") == "finding" and fm.get("status") == "active"
+               for _, (pp, fm, bb) in reg.items()):
+        errs.append("no active finding — security-exposure hat has not reported")
+    events = _source_events()
+    srcs = {e["src"] for e in events if e["event"] == "source.add"}
+    claimed = {e["src"] for e in events if e["event"] == "source.claim"}
+    for s in sorted(srcs - claimed):
+        errs.append(f"ungraded source: {s}")
+    quarantined = [e["claim"] for e in events
+                   if e["event"] == "source.claim" and e.get("verdict") == "fail"]
+    for pk in MURAL.glob("issues/*/packet.md"):
+        txt = pk.read_text()
+        for q in quarantined:
+            if q and q in txt:
+                errs.append(f"quarantined claim in packet {pk.parent.name}: {q[:60]!r}")
+    if not (MURAL / "engineering" / "ratchet.json").exists():
+        errs.append("ratchet snapshot missing — run mural gate ratchet")
+    if errs:
+        for e in errs:
+            print(f"ONBOARD-GATE-FAIL {e}", file=sys.stderr)
+        print("gate onboard: FAIL")
+        return 1
+    ledger_log("gate-onboard", result="pass")
+    print("gate onboard: PASS — campaign complete, repo fully gated")
+    return 0
+
+
+def cmd_gate(args):
+    if args and args[0] == "ratchet":
+        return cmd_gate_ratchet()
+    if args and args[0] == "onboard":
+        return cmd_gate_onboard()
+    if len(args) < 2: print("usage: mural gate dor|ready|ratchet <id>", file=sys.stderr); return 2
+    sub, target = args[0], args[1]
+    reg, _ = load_registry()
+    if target not in reg: print(f"unknown id {target}", file=sys.stderr); return 1
+    path, fm, body = reg[target]
+    if sub == "dor":
+        errs = dor_errors(fm, body) + governed_errors(fm)
+        for e in errs: print(e, file=sys.stderr)
+        print(f"gate dor {target}: {'PASS' if not errs else 'FAIL'}")
+        return 1 if errs else 0
+    if sub == "ready":
+        up_state = "|".join(f"{bare(r)}@{reg[bare(r)][1].get('version')}:{reg[bare(r)][1].get('status')}"
+                             for r in sorted(fm.get("upstream", []) or []) if bare(r) in reg)
+        spec_hash = hashlib.sha256((serialize(fm, body) + up_state).encode()).hexdigest()[:16]
+        vfile = path.parent / "gate" / "verdict.json"
+        if "--live" not in args and vfile.exists():
+            try:
+                v = json.loads(vfile.read_text())
+                if v.get("hash") == spec_hash and v.get("result") == "pass":
+                    print(f"gate ready {target}: PASS (CACHED {spec_hash})")
+                    return 0
+            except Exception:
+                pass
+        errs = dor_errors(fm, body) + governed_errors(fm)
+        errs += anchor_coverage_errors(reg, fm)
+        errs += pin_errors(reg, fm, "READY-FAIL")
+        for ref in fm.get("upstream", []):
+            up = reg.get(bare(ref))
+            if up and up[1].get("status") in {"disputed", "stale", "superseded"}:
+                errs.append(f"READY-FAIL upstream {ref} has status {up[1].get('status')}")
+        for cmdline in fm.get("acceptance", []):
+            p = probe_acceptance(cmdline)
+            if p: errs.append(f"READY-FAIL {p}")
+        if errs:
+            for e in errs: print(e, file=sys.stderr)
+            print(f"gate ready {target}: FAIL")
+            ledger_log("gate-ready", id=target, result="fail", errors=len(errs))
+            return 1
+        # The packet must exist before the readers can read it, but NOTHING that
+        # asserts a verdict may run before the verdict is known: this used to cache
+        # "pass", flip draft->ready and log a pass BEFORE live_fresh_readers ran, so
+        # a failing live gate left a ready issue and a cached pass behind.
+        write_packet(reg, target)
+
+        live_rc, live_verified = 0, False
+        if "--live" in args:
+            live_rc = live_fresh_readers(target)
+            if live_rc not in (0, 3):
+                print(f"gate ready {target}: FAIL (live readers)")
+                ledger_log("gate-ready", id=target, result="live-fail")
+                return live_rc
+            live_verified = live_rc == 0
+
+        vfile.parent.mkdir(exist_ok=True)
+        vfile.write_text(json.dumps({"hash": spec_hash, "result": "pass",
+                                     "live": live_verified}))
+        if fm.get("status") == "draft":       # script-owned transition
+            fm["status"] = "ready"
+            path.write_text(serialize(fm, body))
+            regen_index()
+            print(f"status: draft -> ready (script-owned transition)")
+        ledger_log("gate-ready", id=target, result="pass", live=live_verified)
+        if live_rc == 3:
+            print(f"gate ready {target}: PASS (structural; live step SKIPPED — "
+                  f"verdict records live:false)")
+            return 3
+        if live_verified:
+            print(f"gate ready {target}: PASS (live two-reader gate agreed)")
+            return 0
+        print(f"gate ready {target}: PASS (structural; live two-reader gate not run — prototype)")
+        return 0
+    print(f"unknown gate {sub}", file=sys.stderr); return 2
+
+def cmd_impact(args):
+    if not args: print("usage: mural impact <ID>", file=sys.stderr); return 2
+    reg, _ = load_registry()
+    root_id = bare(args[0])
+    hit, frontier = [], {root_id}
+    while frontier:
+        nxt = set()
+        for did, (path, fm, _b) in reg.items():
+            refs = [bare(r) for r in (fm.get("upstream") or []) + (fm.get("derives_from") or []) + (fm.get("assumes") or [])]
+            if any(f in refs for f in frontier) and did not in [h[0] for h in hit]:
+                hit.append((did, fm)); nxt.add(did)
+        frontier = nxt
+    print(f"impact of {root_id}: {len(hit)} downstream doc(s)")
+    for did, fm in hit:
+        stale = ""
+        if pin_errors(reg, fm, "X"):
+            stale = "  PIN-STALE"
+        print(f"  {did} [{fm.get('status')}] — {fm.get('title')}{stale}")
+    return 0
+
+def cmd_plan(_args):
+    reg, _ = load_registry()
+    done = {d for d, (p, fm, b) in reg.items() if fm.get("status") == "done"}
+    def overlaps(a, b):
+        pa, pb = a.rstrip("/").split("/"), b.rstrip("/").split("/")
+        n = min(len(pa), len(pb))
+        return pa[:n] == pb[:n]
+    taken, selected = [], []
+    for did, (path, fm, _b) in sorted(reg.items()):
+        if fm.get("type") != "issue" or fm.get("status") != "ready":
+            continue
+        if any(bare(dep) not in done for dep in fm.get("depends", []) or []):
+            print(f"skip {did}: unmet depends"); continue
+        pset = list(fm.get("paths", []))
+        clash = [(p, q) for p in pset for q in taken if overlaps(p, q)]
+        if clash:
+            print(f"skip {did}: write-set overlaps {clash[0]}"); continue
+        taken += pset
+        selected.append(did)
+        print(f"launch {did} — model={fm.get('model','default')} max_turns={fm.get('max_turns','default')} paths={pset}")
+    print(f"plan: {len(selected)} issue(s) dispatchable")
+    return 0
+
+def acceptance_timeout(fm):
+    """K9: per-issue key beats repo/env override beats the 120s default."""
+    if fm.get("acceptance_timeout"):
+        try:
+            return int(fm["acceptance_timeout"])
+        except (TypeError, ValueError):
+            pass
+    try:
+        return int(os.environ.get("MURAL_ACCEPT_TIMEOUT", "") or 120)
+    except ValueError:
+        return 120
+
+
+def run_acceptance(fm):
+    outputs = []
+    tmo = acceptance_timeout(fm)
+    for cmdline in fm.get("acceptance", []):
+        try:
+            r = subprocess.run(cmdline, shell=True, cwd=ROOT, capture_output=True,
+                               text=True, timeout=tmo)
+        except subprocess.TimeoutExpired:
+            return False, f"acceptance {cmdline!r} timed out after {tmo}s", outputs
+        outputs.append(r.stdout + r.stderr)
+        if r.returncode != 0:
+            return False, f"acceptance {cmdline!r} exited {r.returncode}:\n{r.stdout}{r.stderr}", outputs
+    return True, "", outputs
+
+def cmd_verify(args):
+    if not args: print("usage: mural verify ISS-<id>", file=sys.stderr); return 2
+    reg, _ = load_registry()
+    iid = args[0]
+    if iid not in reg: print(f"unknown id {iid}", file=sys.stderr); return 1
+    _p, fm, _b = reg[iid]
+    if not fm.get("acceptance"):
+        print(f"VERIFY-FAIL {iid}: no acceptance commands", file=sys.stderr); return 1
+    ok, msg, _ = run_acceptance(fm)
+    if not ok:
+        print(f"VERIFY-FAIL {msg}", file=sys.stderr); return 1
+    print(f"verify {iid}: PASS")
+    return 0
+
+def _output_tokens_since(since):
+    """OUTPUT tokens this project produced since `since` (owner decision D2).
+
+    Read from the session transcript, which the worker cannot author — the whole
+    point, since self-reported cost_tokens is narration. Returns None when no
+    mechanical source is reachable: recording NOTHING is honest, recording 0 is a
+    fabricated maximal-error calibration row.
+    """
+    if not since:
+        return None
+    root = os.environ.get("MURAL_TOKENS_DIR")
+    if root:
+        tdir = pathlib.Path(root)
+    else:
+        tdir = (pathlib.Path.home() / ".claude" / "projects" /
+                str(ROOT).replace("/", "-"))
+    if not tdir.is_dir():
+        return None
+    total, seen = 0, False
+    for f in sorted(tdir.glob("*.jsonl")):
+        try:
+            lines = f.read_text(errors="replace").splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            try:
+                d = json.loads(line)
+            except Exception:
+                continue
+            ts = d.get("timestamp") or ""
+            usage = (d.get("message") or {}).get("usage") or {}
+            out = usage.get("output_tokens")
+            if not ts or out is None:
+                continue
+            # transcript stamps carry millis ("...54.243Z"), kernel stamps do not
+            # ("...54Z"), and "." sorts before "Z" — truncate before comparing or
+            # every same-second entry is silently dropped.
+            if len(ts) >= 19 and ts[:19] + "Z" >= since:
+                total += int(out)
+                seen = True
+    return total if seen else None
+
+
+def cmd_done(args):
+    if not args: print("usage: mural done ISS-<id>", file=sys.stderr); return 2
+    reg, _ = load_registry()
+    iid = args[0]
+    if iid not in reg: print(f"unknown id {iid}", file=sys.stderr); return 1
+    path, fm, body = reg[iid]
+    if fm.get("status") not in {"ready", "in-progress"}:
+        print(f"DONE-FAIL {iid}: status is {fm.get('status')!r}, need ready|in-progress", file=sys.stderr)
+        return 1
+    errs = dor_errors(fm, body) + pin_errors(reg, fm, "DONE-FAIL")
+    if not fm.get("acceptance"):
+        errs.append(f"DONE-FAIL {iid}: empty acceptance — a receipt must certify something")
+    if errs:
+        for e in errs: print(e, file=sys.stderr)
+        return 1
+    if not fm.get("red_receipt") and not fm.get("method") and not fm.get("mutation_receipt"):
+        # research/understanding issues (instrumented with a method key) have no
+        # code to prove red — runs-red doctrine does not map (RETRO-001 harvest 1)
+        print(f"WARN {iid}: no red_receipt — this work was never proven red (runs-red doctrine)", file=sys.stderr)
+    t0 = time.time()
+    ok, msg, outputs = run_acceptance(fm)
+    wall_s = round(time.time() - t0, 1)
+    if not ok:
+        print(f"DONE-FAIL {msg}", file=sys.stderr); return 1
+    def in_writeset(f, paths):
+        for o in paths or []:
+            o = o.rstrip("/*")
+            if f == o or f.startswith(o.rstrip("/") + "/"):
+                return True
+        return False
+    try:
+        changed = set(l[3:].strip() for l in subprocess.run(
+            ["git", "status", "--porcelain"], cwd=ROOT,
+            capture_output=True, text=True).stdout.splitlines() if l.strip())
+        # K9 window fix (F-01M0K9KGE5TWCD5VHSVP2ZWMY1): work committed between the
+        # red receipt and done still counts — diff since the commit at red_time.
+        base = fm.get("red_sha") or fm.get("mutation_sha")
+        if not base or base == "no-git":
+            red_time = fm.get("red_time") or fm.get("mutation_time")
+            if red_time:
+                base = subprocess.run(["git", "rev-list", "-1", f"--before={red_time}", "HEAD"],
+                                      cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        if not base or base == "no-git":
+            # No provable window: the actuals are UNGRADEABLE, not zero. Scoring a
+            # bookkeeping close as ratio 0.00 is the worst possible calibration row
+            # and would burn the threshold's headroom over work nobody did.
+            actual_files, actual_total = -1, -1
+        else:
+            committed = subprocess.run(["git", "diff", "--name-only", f"{base}..HEAD"],
+                                       cwd=ROOT, capture_output=True, text=True).stdout.splitlines()
+            changed |= set(f.strip() for f in committed if f.strip())
+            actual_total = len(changed)
+            actual_files = len([f for f in changed if in_writeset(f, fm.get("paths"))])
+    except Exception:
+        actual_files, actual_total = -1, -1
+    try:
+        sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
+                             text=True).stdout.strip() or "no-git"
+    except Exception:
+        sha = "no-git"
+    fm["status"] = "done"
+    fm["receipt_sha"] = sha
+    fm["receipt_time"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    fm["receipt_tests"] = hashlib.sha256("".join(outputs).encode()).hexdigest()[:16]
+    tokens = _output_tokens_since(fm.get("red_time") or fm.get("mutation_time"))
+    if tokens is not None:
+        fm["actual_tokens"] = tokens
+    fm["actual_files"] = actual_files
+    fm["actual_files_total"] = actual_total
+    fm["actual_wall_s"] = wall_s
+    path.write_text(serialize(fm, body))
+    ledger_log("done", id=iid, receipt_sha=sha, receipt_tests=fm["receipt_tests"],
+               predicted_files=fm.get("cw_files"), actual_files=actual_files,
+               predicted_tokens=fm.get("cw_tokens"),
+               actual_tokens=fm.get("actual_tokens"), wall_s=wall_s)
+    regen_index()
+    print(f"done: {iid} — receipt {fm['receipt_tests']} @ {sha[:8]} (index refreshed)")
+    return 0
+
+
+MAP_TYPES = {"prd", "des", "issue", "qp", "finding", "co"}
+MAP_CLASS = {"done": "done", "ready": "ready", "in-progress": "inprog", "draft": "draft",
+             "blocked": "bad", "disputed": "bad", "active": "active"}
+
+def parse_borders():
+    """Walls table + cavity bullets from engineering/borders.md (best-effort)."""
+    walls, cavities = [], []
+    b = MURAL / "engineering" / "borders.md"
+    if not b.exists():
+        return walls, cavities
+    section = None
+    for line in b.read_text().splitlines():
+        if line.startswith("## Walls"): section = "w"; continue
+        if line.startswith("## Cavities"): section = "c"; continue
+        if line.startswith("## "): section = None; continue
+        if section == "w" and line.startswith("|"):
+            cells = [c.strip().strip("*") for c in line.strip("|").split("|")]
+            if len(cells) >= 2 and cells[0] and cells[0].lower() != "module" and not set(cells[0]) <= set("-: "):
+                owns = [p.strip() for p in cells[1].split(",") if p.strip()]
+                walls.append((cells[0], owns))
+        if section == "c" and line.startswith("- **"):
+            name = line[4:line.index("**", 4)]
+            cavities.append(name)
+    return walls, cavities
+
+def cmd_map(_args):
+    """Living blueprint v2: floor plan — module rooms from the walls table, issues placed
+    by write-set, product wing, cavities, status paint + PIN-STALE highlighting."""
+    reg, _ = load_registry()
+    shown = {d: reg[d] for d in reg if reg[d][1].get("type") in MAP_TYPES}
+    walls, cavities = parse_borders()
+    def nid(x):
+        return re.sub(r"[^A-Za-z0-9]", "_", x)
+    def node_line(did, fm, indent="    "):
+        st = str(fm.get("status"))
+        stale = bool(pin_errors(reg, fm, "X"))
+        cls = "pinstale" if stale else MAP_CLASS.get(st, "other")
+        title = str(fm.get("title", "")).replace('"', "'")[:48]
+        flag = " ⚠ PIN-STALE" if stale else ""
+        return f'{indent}{nid(did)}["{did.split("-", 1)[0]}: {title}<br/>[{st}]{flag}"]:::{cls}'
+    def owns_match(paths, owns):
+        for p in paths or []:
+            for o in owns:
+                o = o.rstrip("/*")
+                if p == o or p.startswith(o.rstrip("/") + "/") or o.startswith(p.rstrip("/") + "/"):
+                    return True
+        return False
+
+    lines = ["<!-- GENERATED by `scripts/mural map` — the living blueprint projection; do not hand-edit -->",
+             "# Mural map — the living blueprint", "", "```mermaid", "flowchart TD"]
+    placed = set()
+    # module rooms
+    for mod, owns in walls:
+        room = [d for d, (p, fm, b) in sorted(shown.items())
+                if fm.get("type") == "issue" and owns_match(fm.get("paths"), owns)]
+        counts = {}
+        for d in room:
+            counts[shown[d][1].get("status")] = counts.get(shown[d][1].get("status"), 0) + 1
+        label = mod + (" — " + ", ".join(f"{v} {k}" for k, v in sorted(counts.items())) if counts else " — no active work")
+        lines.append(f'    subgraph R_{nid(mod)}["{label}"]')
+        if not room:
+            lines.append(f'        E_{nid(mod)}[" "]:::empty')
+        for d in room:
+            lines.append(node_line(d, shown[d][1], "        "))
+            placed.add(d)
+        lines.append("    end")
+    # product wing: everything not placed
+    wing = [d for d in sorted(shown) if d not in placed]
+    if wing:
+        lines.append('    subgraph WING["product & design wing"]')
+        for d in wing:
+            lines.append(node_line(d, shown[d][1], "        "))
+        lines.append("    end")
+    # cavities
+    if cavities:
+        lines.append('    subgraph CAV["cavities — pre-routed channels"]')
+        for c in cavities:
+            lines.append(f'        C_{nid(c)}(["{c}"]):::cavity')
+        lines.append("    end")
+    # edges
+    edges = set()
+    for did in shown:
+        fm = shown[did][1]
+        for ref in (fm.get("derives_from") or []) + (fm.get("upstream") or []):
+            b = bare(ref)
+            if b in shown and b != did:
+                edges.add(f"    {nid(b)} --> {nid(did)}")
+    lines += sorted(edges)
+    lines += ["    classDef done fill:#2e7d32,color:#fff", "    classDef ready fill:#1565c0,color:#fff",
+              "    classDef inprog fill:#f9a825,color:#000", "    classDef draft fill:#9e9e9e,color:#000",
+              "    classDef bad fill:#c62828,color:#fff", "    classDef active fill:#00695c,color:#fff",
+              "    classDef other fill:#6a1b9a,color:#fff",
+              "    classDef pinstale fill:#e65100,color:#fff,stroke:#c62828,stroke-width:3px",
+              "    classDef cavity fill:#4527a0,color:#fff,stroke-dasharray: 5 5",
+              "    classDef empty fill:transparent,stroke:transparent",
+              "```", ""]
+    counts = {}
+    for d in shown:
+        counts[shown[d][1].get("status")] = counts.get(shown[d][1].get("status"), 0) + 1
+    glance = " · ".join(f"{v} {s}" for s, v in sorted(counts.items()))
+    lines.insert(3, f"At a glance: {glance} — geometry from walls (borders.md), paint from receipts.")
+    lines.insert(4, "")
+    (MURAL / "map.md").write_text("\n".join(lines))
+    contract = {
+        "schema": "mural-blueprint/0.1",
+        "rooms": [{"module": m, "writes": o} for m, o in walls],
+        "cavities": cavities,
+        "nodes": [{"id": d, "kind": shown[d][1].get("type"), "title": shown[d][1].get("title"),
+                   "status": shown[d][1].get("status"),
+                   "sourceLocation": str(shown[d][0].relative_to(ROOT)),
+                   "writes": shown[d][1].get("paths", [])}
+                  for d in sorted(shown)],
+        "edges": sorted({(bare(r), d) for d in shown
+                         for r in (shown[d][1].get("derives_from") or []) + (shown[d][1].get("upstream") or [])
+                         if bare(r) in shown and bare(r) != d}),
+    }
+    contract["edges"] = [{"from": a, "to": b, "type": "derives"} for a, b in contract["edges"]]
+    (MURAL / "blueprint.json").write_text(json.dumps(contract, indent=1))
+    print(f"map v2 written: {len(shown)} docs, {len(walls)} rooms, {len(cavities)} cavities — {glance}")
+    print("blueprint.json written (mural-blueprint/0.1 contract — compiles to LikeC4 in v1)")
+    return 0
+
+
+CAL_ERROR_THRESHOLD = 0.5   # mean |ratio-1| above this fails (once n >= 3)
+CAL_MIN_N = 3
+CAL_WINDOW = 5              # grade the recent window only (ADR-0019, PSP windowed practice)
+
+def cmd_calibrate(_args):
+    """Predicted vs script-written actuals. A breach must produce a process ADR."""
+    lp = ledger_path()
+    if not lp.exists():
+        print("calibrate: no ledger yet"); return 0
+    rows = []
+    for line in lp.read_text().splitlines():
+        try:
+            e = json.loads(line)
+        except Exception:
+            continue
+        if e.get("event") == "done" and e.get("predicted_files") and e.get("actual_files", -1) >= 0:
+            rows.append(e)
+    if not rows:
+        print("calibrate: no done-events with actuals yet"); return 0
+    rows = rows[-CAL_WINDOW:]
+    errs = []
+    tok_errs = []
+    print(f"{'issue':<30} {'pred_files':>10} {'act_files':>9} {'ratio':>6} "
+          f"{'pred_tokens':>11} {'act_tokens':>10} {'t_ratio':>7}")
+    for e in rows:
+        pf, af = e["predicted_files"], e["actual_files"]
+        ratio = (af / pf) if pf else float("inf")
+        errs.append(abs(ratio - 1))
+        # tokens grade only where BOTH sides are real; a missing actual means the
+        # measurement was unavailable, which is not the same as a bad estimate.
+        pt, at = e.get("predicted_tokens"), e.get("actual_tokens")
+        if pt and at is not None:
+            t_ratio = at / pt
+            tok_errs.append(abs(t_ratio - 1))
+            tcol = f"{pt:>11} {at:>10} {t_ratio:>7.2f}"
+        else:
+            tcol = f"{(pt or '-'):>11} {'-':>10} {'-':>7}"
+        print(f"{e['id']:<30} {pf:>10} {af:>9} {ratio:>6.2f} {tcol}")
+    mae = sum(errs) / len(errs)
+    if tok_errs:
+        t_mae = sum(tok_errs) / len(tok_errs)
+        print(f"calibrate tokens: n={len(tok_errs)} mean|ratio-1|={t_mae:.2f} "
+              f"(output tokens only; ungraded rows had no mechanical source)")
+    else:
+        t_mae = None
+        print("calibrate tokens: none gradeable yet (no actual_tokens recorded)")
+    print(f"calibrate: n={len(rows)} mean|ratio-1|={mae:.2f} threshold={CAL_ERROR_THRESHOLD} (enforced at n>={CAL_MIN_N})")
+    ledger_log("calibrate", n=len(rows), mae=round(mae, 3),
+               token_n=len(tok_errs), token_mae=round(t_mae, 3) if t_mae is not None else None)
+    if len(rows) >= CAL_MIN_N and mae > CAL_ERROR_THRESHOLD:
+        print("CALIBRATE-FAIL: estimation error over threshold — file a process ADR naming the "
+              "adjustment and its predicted effect; the next calibrate grades it.", file=sys.stderr)
+        return 1
+    return 0
+
+
+def file_hash(path):
+    try:
+        return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()[:8]
+    except Exception:
+        return None
+
+def anchor_errors(reg, autoflip=False):
+    """anchors: [path@hash8] — mismatch flips the doc stale (Law: staleness is mechanical)."""
+    errs, flipped = [], []
+    for did, (path, fm, body) in reg.items():
+        broken = []
+        for a in (fm.get("anchors") or []):
+            if "@" not in a:
+                errs.append(f"{path.relative_to(ROOT)}: anchor '{a}' missing @hash (stamp with `mural anchor`)")
+                continue
+            target, want = a.rsplit("@", 1)
+            have = file_hash(target)
+            if have is None:
+                broken.append(f"{target} (gone)")
+            elif have != want:
+                broken.append(f"{target} (changed {want}->{have})")
+        if broken:
+            errs.append(f"{path.relative_to(ROOT)}: ANCHOR-STALE {', '.join(broken)}")
+            if autoflip and fm.get("status") not in {"stale", "superseded"}:
+                fm["status"] = "stale"
+                path.write_text(serialize(fm, body))
+                flipped.append(did)
+    return errs, flipped
+
+def cmd_anchor(args):
+    if len(args) < 2: print("usage: mural anchor <DOC-ID> <path> [path...]", file=sys.stderr); return 2
+    reg, _ = load_registry()
+    did = args[0]
+    if did not in reg: print(f"unknown id {did}", file=sys.stderr); return 1
+    path, fm, body = reg[did]
+    existing = {a.rsplit("@", 1)[0]: a for a in (fm.get("anchors") or []) if "@" in a}
+    for target in args[1:]:
+        h = file_hash(target)
+        if h is None:
+            print(f"ANCHOR-FAIL no such file: {target}", file=sys.stderr); return 1
+        existing[target] = f"{target}@{h}"
+    fm["anchors"] = sorted(existing.values())
+    if fm.get("status") == "stale":
+        fm["status"] = "active"
+        print(f"{did}: re-anchored, stale -> active (script-owned)")
+    path.write_text(serialize(fm, body))
+    regen_index()
+    print(f"anchored {did}: {fm['anchors']}")
+    return 0
+
+
+READER_PROMPT = """You are a fresh reader with zero project context beyond the packet below.
+Do not use any tools, do not read any files — everything you may know is in this prompt,
+and your ENTIRE first reply must be the JSON object. Do not be helpful; be literal. Produce ONLY a JSON object, no prose, no code fences:
+{"plan": true, "files": [paths you would modify], "tests": [exact commands you would make pass],
+ "steps": [3-8 short strings]}
+or, if any decision is not answerable from the packet alone:
+{"plan": false, "questions": [{"field": "<DoR field violated>", "question": "...", "proposed_default": "..."}]}
+
+PACKET:
+"""
+
+def live_fresh_readers(iid):
+    """Two cold small-model readers; plan divergence on files/tests is the ambiguity signal."""
+    packet = MURAL / "issues" / iid / "packet.md"
+    if not packet.exists():
+        print("no packet", file=sys.stderr); return 1
+    prompt = READER_PROMPT + packet.read_text()
+    outs = []
+    for i in (1, 2):
+        try:
+            r = subprocess.run(["claude", "-p", prompt, "--model", "haiku", "--max-turns", "2", "--disallowedTools", "*"],
+                               capture_output=True, text=True, timeout=300, cwd=ROOT)
+        except FileNotFoundError:
+            print("LIVE-SKIP: claude CLI not found", file=sys.stderr); return 3
+        except subprocess.TimeoutExpired:
+            print("LIVE-FAIL: reader timed out", file=sys.stderr); return 1
+        raw = r.stdout.strip()
+        m = re.search(r"\{.*\}", raw, re.S)
+        if r.returncode != 0 or not m:
+            print(f"LIVE-SKIP: reader {i} unusable (rc={r.returncode})\n{raw[:300]}{r.stderr[:300]}", file=sys.stderr)
+            return 3
+        try:
+            outs.append(json.loads(m.group(0)))
+        except Exception:
+            print(f"LIVE-SKIP: reader {i} emitted unparseable JSON", file=sys.stderr); return 3
+        gd = MURAL / "issues" / iid / "gate"
+        gd.mkdir(exist_ok=True)
+        (gd / f"reader-{i}.json").write_text(m.group(0))
+    for i, o in enumerate(outs, 1):
+        if not o.get("plan"):
+            qs = "; ".join(q.get("question", "?") for q in o.get("questions", []))
+            print(f"LIVE-FAIL reader {i} has questions: {qs}", file=sys.stderr)
+            ledger_log("gate-ready-live", id=iid, result="questions", reader=i)
+            return 1
+    f1, f2 = set(outs[0].get("files", [])), set(outs[1].get("files", []))
+    t1, t2 = set(outs[0].get("tests", [])), set(outs[1].get("tests", []))
+    div = (f1 ^ f2) | (t1 ^ t2)
+    if div:
+        print(f"LIVE-FAIL plan divergence (ambiguity signal): {sorted(div)}", file=sys.stderr)
+        ledger_log("gate-ready-live", id=iid, result="divergence", diff=sorted(div))
+        return 1
+    print(f"gate ready {iid}: LIVE PASS — two cold readers converged (files={sorted(f1)}, tests={sorted(t1)})")
+    ledger_log("gate-ready-live", id=iid, result="pass")
+    return 0
+
+
+def cmd_health(_args):
+    """Org self-fidelity: DEADLOCK cycles hard-fail; FREESPIN and STUCK report. Exit 0/1."""
+    reg, _ = load_registry()
+    rc = 0
+    # deadlock: cycles over the full relation graph
+    graph = {}
+    for did, (path, fm, b) in reg.items():
+        refs = []
+        for key in ("depends", "upstream", "derives_from", "assumes"):
+            refs += [bare(r) for r in (fm.get(key) or []) if bare(r) in reg and bare(r) != did]
+        graph[did] = refs
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = {d: WHITE for d in graph}
+    cycles = []
+    def dfs(node, trail):
+        color[node] = GRAY
+        for nxt in graph.get(node, []):
+            if color[nxt] == GRAY:
+                cycles.append(trail[trail.index(nxt):] + [nxt] if nxt in trail else [node, nxt, node])
+            elif color[nxt] == WHITE:
+                dfs(nxt, trail + [nxt])
+        color[node] = BLACK
+    for d in sorted(graph):
+        if color[d] == WHITE:
+            dfs(d, [d])
+    for c in cycles:
+        print(f"DEADLOCK: {' -> '.join(c)}", file=sys.stderr)
+        rc = 1
+    # freespin: >3 consecutive gate-ready events per id without an interleaved transition
+    lp = ledger_path()
+    if lp.exists():
+        streak = {}
+        for line in lp.read_text().splitlines():
+            try:
+                e = json.loads(line)
+            except Exception:
+                continue
+            i = e.get("id")
+            if not i:
+                continue
+            if e.get("event") == "gate-ready":
+                streak[i] = streak.get(i, 0) + 1
+            elif e.get("event") in {"done", "gate-ready-live"}:
+                streak[i] = 0
+        for i, n in sorted(streak.items()):
+            if n > 3:
+                print(f"FREESPIN: {i} — {n} gate-ready runs with no transition (spend without progress)")
+    # stuck: report-only
+    for did, (path, fm, b) in sorted(reg.items()):
+        if fm.get("status") in {"blocked", "disputed"}:
+            print(f"STUCK: {did} [{fm.get('status')}] — {fm.get('title')}")
+    print(f"health: {len(cycles)} deadlock(s){'' if rc else ' — org is live'}")
+    ledger_log("health", deadlocks=len(cycles))
+    return rc
+
+
+def cmd_red(args):
+    """runs-red receipt: acceptance must FAIL now; the failure is the proof (Law 6)."""
+    if not args: print("usage: mural red ISS-<id>", file=sys.stderr); return 2
+    reg, _ = load_registry()
+    iid = args[0]
+    if iid not in reg: print(f"unknown id {iid}", file=sys.stderr); return 1
+    path, fm, body = reg[iid]
+    if not fm.get("acceptance"):
+        print(f"RED-FAIL {iid}: no acceptance commands", file=sys.stderr); return 1
+    ok, msg, outputs = run_acceptance(fm)
+    if ok:
+        print(f"RED-FAIL {iid}: acceptance already passes — the test proves nothing new", file=sys.stderr)
+        return 1
+    fm["red_receipt"] = hashlib.sha256("".join(outputs).encode()).hexdigest()[:16]
+    fm["red_time"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    fm["red_sha"] = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                                   capture_output=True, text=True).stdout.strip() or "no-git"
+    path.write_text(serialize(fm, body))
+    ledger_log("red", id=iid, red_receipt=fm["red_receipt"])
+    regen_index()
+    print(f"red: {iid} — failing as it should ({fm['red_receipt']})")
+    return 0
+
+
+SEED_PLAYBOOKS = ["armament.md", "stewardship.md", "security.md", "debugging.md",
+                  "authoring.md", "retro-template.md", "operator-profile.md", "onboarding.md"]
+
+def _detect_test_command(dest):
+    """Best-effort declared-test-command detection. Returns (cmd, how) or (None, None)."""
+    import json as _json
+    pkg = dest / "package.json"
+    if pkg.exists():
+        try:
+            scripts = _json.loads(pkg.read_text()).get("scripts", {})
+            if "test" in scripts:
+                return "npm test", f"package.json scripts.test = {scripts['test']!r}"
+        except Exception:
+            pass
+    if (dest / "gradlew").exists():
+        return "./gradlew test", "gradlew wrapper present"
+    for marker in ("pytest.ini", "pyproject.toml", "setup.cfg"):
+        if (dest / marker).exists() and any(dest.glob("tests/test_*.py")):
+            return "pytest", f"{marker} + tests/test_*.py"
+    if any(dest.glob("tests/test_*.py")):
+        return "pytest", "tests/test_*.py present"
+    mk = dest / "Makefile"
+    if mk.exists() and re.search(r"^test:", mk.read_text(), re.M):
+        return "make test", "Makefile test target"
+    return None, None
+
+
+def cmd_onboard(args):
+    """Brownfield: --preflight reports graftability of an existing repo (K2).
+
+    Writes nothing. Exit 0 graftable, 1 itemized blockers, 2 usage.
+    The graft itself lands in K4 (ISS-01M0KFYMF6TD5AYTFZF4DR1SFP).
+    """
+    if not args or args == ["--preflight"]:
+        print("usage: mural onboard [--preflight|--no-commit|--remove] <dest>", file=sys.stderr); return 2
+    flags = [a for a in args if a.startswith("--")]
+    pos = [a for a in args if not a.startswith("--")]
+    if not pos:
+        print("usage: mural onboard [--preflight|--no-commit|--remove] <dest>", file=sys.stderr)
+        return 2
+    dest = pathlib.Path(pos[0]).expanduser().resolve()
+    if "--remove" in flags:
+        return _remove_graft(dest)
+    if "--preflight" not in flags:
+        rc = cmd_onboard(["--preflight", str(dest)])
+        if rc != 0:
+            print("ONBOARD-FAIL: preflight blockers above", file=sys.stderr)
+            return 1
+        return _graft(dest, no_commit="--no-commit" in flags)
+    blockers, notes = [], []
+
+    def git(*a):
+        return subprocess.run(["git", "-C", str(dest), *a],
+                              capture_output=True, text=True)
+
+    if not dest.is_dir():
+        blockers.append(f"{dest} is not a directory")
+    elif git("rev-parse", "--git-dir").returncode != 0:
+        blockers.append("not a git repository (mural needs history as ground truth)")
+    else:
+        if git("rev-parse", "HEAD").returncode != 0:
+            blockers.append("no commits — mural needs a baseline commit to adopt at")
+        name = git("config", "user.name").stdout.strip()
+        email = git("config", "user.email").stdout.strip()
+        if not name or not email:
+            blockers.append("git identity incomplete (user.name/user.email) — the adoption commit needs an author")
+        for rel in ("mural", "scripts/mural"):
+            if (dest / rel).exists():
+                extra = ""
+                if rel == "mural":
+                    bad = [str(f.relative_to(dest)) for f in (dest / "mural").rglob("*.md")
+                           if not f.read_text(errors="replace").startswith("---")][:5]
+                    if bad:
+                        extra = f" (contains non-frontmatter .md: {', '.join(bad)})"
+                blockers.append(f"collision: {rel}/ already exists{extra}" if rel == "mural"
+                                else f"collision: {rel} already exists")
+        # hook landscape: chained by the graft, so informational
+        hookpath = git("config", "core.hooksPath").stdout.strip()
+        if hookpath:
+            notes.append(f"hook manager: core.hooksPath = {hookpath} (graft will chain it)")
+        if (dest / ".husky").is_dir():
+            notes.append("hook manager: .husky/ present (graft will chain it)")
+        if (dest / "lefthook.yml").exists() or (dest / ".lefthook.yml").exists():
+            notes.append("hook manager: lefthook config present (graft will chain it)")
+        gh_pc = dest / ".git" / "hooks" / "pre-commit"
+        if gh_pc.exists():
+            notes.append("hook: .git/hooks/pre-commit present (graft will chain it)")
+        if (dest / "tests" / "smoke.sh").exists():
+            notes.append("tests/smoke.sh exists (graft relocates mural smoke to scripts/mural-smoke.sh)")
+        if (dest / ".claude").exists():
+            notes.append(".claude/ exists (graft deep-merges; colliding skills skipped with a report)")
+        cmd, how = _detect_test_command(dest)
+        if cmd:
+            notes.append(f"test command: {cmd} ({how}; runtime not measured — acceptance timeout is 120s)")
+        else:
+            notes.append("test command: none detected — acceptance gates will need one before QA-hat work")
+
+    for b in blockers:
+        print(f"BLOCKER: {b}")
+    for n in notes:
+        print(f"note: {n}")
+    if blockers:
+        print(f"PREFLIGHT FAIL: {len(blockers)} blocker(s)")
+        return 1
+    print(f"PREFLIGHT PASS: {dest} is graftable")
+    return 0
+
+
+GRAFT_MARKER = "generated by mural onboard"
+
+def _graft(dest, no_commit):
+    """K4: non-clobber graft of the mural namespace onto an existing repo."""
+    created, modified, skipped = [], [], []
+
+    def rel(p):
+        return str(p.relative_to(dest))
+
+    def mk(relpath):
+        (dest / relpath).mkdir(parents=True, exist_ok=True)
+
+    def cp(src, relpath):
+        tgt = dest / relpath
+        if tgt.exists():
+            skipped.append(relpath)
+            return False
+        tgt.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, tgt)
+        created.append(relpath)
+        return True
+
+    def git(*a, check=False):
+        r = subprocess.run(["git", "-C", str(dest), *a], capture_output=True, text=True)
+        if check and r.returncode != 0:
+            print(f"ONBOARD-FAIL git {' '.join(a)}: {r.stderr.strip()}", file=sys.stderr)
+            sys.exit(1)
+        return r
+
+    baseline = git("rev-parse", "HEAD").stdout.strip()
+    kernel_sha = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+                                capture_output=True, text=True).stdout.strip() or "unknown"
+
+    for sub in ["scripts/hooks", "scripts/githooks", "tests", ".claude",
+                "mural/product", "mural/design", "mural/engineering/modules", "mural/issues",
+                "mural/questions", "mural/findings", "mural/changes", "mural/decisions",
+                "mural/assumptions", "mural/reuse/scans", "mural/qa/plans", "mural/manual",
+                "mural/process/playbooks", "mural/process/retros", "mural/imports"]:
+        mk(sub)
+
+    cp(ROOT / "scripts" / "mural", "scripts/mural")
+    cp(ROOT / "scripts" / "dispatch.sh", "scripts/dispatch.sh")
+    for f in (ROOT / "scripts" / "hooks").iterdir():
+        cp(f, f"scripts/hooks/{f.name}")
+    for pb in SEED_PLAYBOOKS:
+        cp(ROOT / "mural" / "process" / "playbooks" / pb, f"mural/process/playbooks/{pb}")
+    for tmpl in sorted((ROOT / "mural" / "process" / "templates").glob("*.tmpl")):
+        cp(tmpl, f"mural/process/templates/{tmpl.name}")
+    cp(ROOT / "mural" / "glossary.md", "mural/glossary.md")
+    cp(ROOT / "mural" / "design" / "system.md", "mural/design/system.md")
+    for sub in ["mural/assumptions", "mural/findings", "mural/changes", "mural/questions",
+                "mural/qa/plans", "mural/engineering/modules", "mural/issues",
+                "mural/process/retros", "mural/imports"]:
+        gk = dest / sub / ".gitkeep"
+        if not gk.exists():
+            gk.touch(); created.append(rel(gk))
+    lg = dest / "mural" / "process" / "ledger.jsonl"
+    if not lg.exists():
+        lg.touch(); created.append(rel(lg))
+
+    # .claude: agents/skills file-by-file, settings deep-merge
+    for kind in ("agents", "skills"):
+        src_root = ROOT / ".claude" / kind
+        if src_root.exists():
+            for f in src_root.rglob("*"):
+                if f.is_file():
+                    cp(f, f".claude/{kind}/{f.relative_to(src_root)}")
+    ksettings = json.loads((ROOT / ".claude" / "settings.json").read_text())
+    stgt = dest / ".claude" / "settings.json"
+    if not stgt.exists():
+        cp(ROOT / ".claude" / "settings.json", ".claude/settings.json")
+    else:
+        dsettings = json.loads(stgt.read_text())
+        dh = dsettings.setdefault("hooks", {})
+        for event, entries in ksettings.get("hooks", {}).items():
+            have = dh.setdefault(event, [])
+            for e in entries:
+                if e not in have:
+                    have.append(e)
+        for k, v in ksettings.items():
+            if k != "hooks" and k not in dsettings:
+                dsettings[k] = v
+        stgt.write_text(json.dumps(dsettings, indent=2) + "\n")
+        modified.append(".claude/settings.json")
+
+    # smoke: never clobber an existing tests/smoke.sh
+    smoke_rel = "tests/smoke.sh"
+    if (dest / "tests" / "smoke.sh").exists():
+        smoke_rel = "scripts/mural-smoke.sh"
+    cp(ROOT / "templates" / "smoke-minimal.sh", smoke_rel)
+    (dest / smoke_rel).chmod(0o755)
+
+    # chained pre-commit: displaced hook first, then mural gates
+    hookpath_prev = git("config", "core.hooksPath").stdout.strip()
+    displaced = ""
+    if hookpath_prev and hookpath_prev != "scripts/githooks":
+        cand = dest / hookpath_prev / "pre-commit"
+        if cand.exists():
+            displaced = str(Path(hookpath_prev) / "pre-commit")
+    if not displaced and (dest / ".git" / "hooks" / "pre-commit").exists():
+        displaced = ".git/hooks/pre-commit"
+    hook = dest / "scripts" / "githooks" / "pre-commit"
+    if hook.exists():
+        skipped.append("scripts/githooks/pre-commit")
+    else:
+        hook.write_text(f"""#!/bin/bash
+# {GRAFT_MARKER} — chained pre-commit
+# displaced_hook={displaced or 'none'}
+# restore_hookspath={hookpath_prev or 'none'}
+cd "$(git rev-parse --show-toplevel)" || exit 1
+if [ -x "{displaced}" ] && [ -n "{displaced}" ]; then
+  "{displaced}" "$@" || exit $?
+fi
+scripts/mural check || exit 1
+exec bash {smoke_rel}
+""")
+        hook.chmod(0o755)
+        created.append("scripts/githooks/pre-commit")
+    git("config", "core.hooksPath", "scripts/githooks")
+
+    # primed stubs
+    def stub(relpath, docid, title, owner, body):
+        tgt = dest / relpath
+        if tgt.exists():
+            skipped.append(relpath)
+            return
+        tgt.write_text(f"---\nid: {docid}\ntype: evergreen\nstatus: active\n"
+                       f"owner: {owner}\ntitle: {title}\nversion: 1\n---\n{body}")
+        created.append(relpath)
+
+    name = dest.name
+    walls = sorted(d.name for d in dest.iterdir() if d.is_dir()
+                   and d.name not in {".git", ".claude", "mural", "scripts", "node_modules",
+                                      ".venv", "venv", "build", "dist", "__pycache__"})
+    stub("mural/product/vision.md", "DOC-vision", f"Vision — {name}", "pm",
+         "\nGating blank: the product already exists — the PM hat's onboarding issue "
+         "writes the RETRO-VISION here (what this product actually is, verified "
+         "against code), not aspirations. Blank correctly gates refinement.\n")
+    wall_rows = "\n".join(f"| {w}/ (candidate) | {w}/** | (eng onboarding issue verifies) |" for w in walls)
+    stub("mural/engineering/borders.md", "DOC-borders", f"Blueprint — walls and cavities of {name}", "eng",
+         "\n## Walls (module borders)\n\nCANDIDATES from the top-level layout — unverified "
+         "until the eng onboarding issue anchors them:\n\n| Module | Owns (write-set) | Interface (the doorway) |\n|---|---|---|\n"
+         + wall_rows + "\n\n## Cavities (pre-routed channels)\n\n- **Universal defaults**: a11y, i18n, EU-compliance, security/privacy (ADR-0012 inherited).\n")
+    sources = []
+    for pat in ("README*", "*.md", "docs/**/*.md", "CLAUDE.md", "AGENTS.md"):
+        for f in sorted(dest.glob(pat)):
+            if f.is_file() and "mural" not in f.parts:
+                r = rel(f)
+                if r not in sources:
+                    sources.append(r)
+    src_rows = "\n".join(f"- {s} — UNGRADED (reliability F / credibility 6 until the campaign grades it)" for s in sources)
+    stub("mural/manual/index.md", "DOC-manual", f"Manual — {name} (onboarding state)", "eng",
+         "\nThe human manual layer (ADR-0018). This repo was ADOPTED, not born here: "
+         "pre-existing docs below are SOURCES under trust-but-verify (ADR-0008), "
+         "not truth.\n\n## Ungraded sources\n\n" + (src_rows or "- (none found)") + "\n")
+
+    gov = dest / "mural" / "engineering" / "governed.txt"
+    if not gov.exists():
+        gov.write_text(f"# baseline: {baseline}\n# governed = listed prefix OR created after baseline\nmural/**\n")
+        created.append("mural/engineering/governed.txt")
+
+    adr = dest / "mural" / "decisions" / "0001-adopted-from-kernel.md"
+    if not adr.exists():
+        adr.write_text(f"""---
+id: ADR-0001
+type: adr
+status: active
+owner: user
+title: {name} adopted into Mural (brownfield graft)
+version: 1
+---
+## Context
+
+{name} predates its mural. Grafted by `mural onboard` on {time.strftime('%Y-%m-%d')}
+from kernel {kernel_sha[:12]}; adoption baseline commit {baseline}.
+
+## Decision
+
+mural/decisions is authoritative from this commit forward. Pre-existing docs are
+sources under trust-but-verify (ADR-0008 doctrine, inherited), reliability F until
+graded by the onboarding campaign. Gates enforce on governed.txt paths and code
+created after {baseline[:12]} only — legacy paths absorb on first touch.
+
+## Considered options
+
+Greenfield reseed (loses history — rejected); wholesale doc trust (poisons the
+mural — rejected by ADR-0008); graft + campaign (chosen).
+
+## Consequences
+
+Onboarding is this repo's first Mural project: five hat understanding-issues +
+retro, per the kernel onboarding playbook.
+""")
+        created.append("mural/decisions/0001-adopted-from-kernel.md")
+
+    manifest = dest / "mural" / ".onboard-manifest"
+    manifest.write_text("\n".join(created) + "\n")
+    created.append("mural/.onboard-manifest")
+
+    r = subprocess.run([sys.executable, str(dest / "scripts" / "mural"), "index"],
+                       capture_output=True, text=True, cwd=dest)
+    if r.returncode != 0:
+        print("ONBOARD-FAIL: grafted index red\n" + r.stderr, file=sys.stderr); return 1
+    r = subprocess.run([sys.executable, str(dest / "scripts" / "mural"), "check"],
+                       capture_output=True, text=True, cwd=dest)
+    if r.returncode != 0:
+        print("ONBOARD-FAIL: grafted check red\n" + r.stdout + r.stderr, file=sys.stderr); return 1
+
+    for s in skipped:
+        print(f"skip (exists, kept yours): {s}")
+    for m in modified:
+        print(f"merged: {m}")
+    if not no_commit:
+        git("add", "--", *created, *modified, check=True)
+        git("commit", "-m", f"mural: adopted at {baseline[:12]} (grafted from kernel {kernel_sha[:12]})", check=True)
+        print(f"adoption commit: {git('rev-parse', 'HEAD').stdout.strip()[:12]}")
+    else:
+        print("no-commit: graft left unstaged")
+    print(f"ONBOARD PASS: {dest} grafted ({len(created)} created, {len(modified)} merged, {len(skipped)} kept)")
+    return 0
+
+
+def _remove_graft(dest):
+    """Inverse of the graft: delete manifest-listed files, restore hook config."""
+    manifest = dest / "mural" / ".onboard-manifest"
+    if not manifest.exists():
+        print("ONBOARD-FAIL: no mural/.onboard-manifest — nothing to remove", file=sys.stderr)
+        return 1
+    hook = dest / "scripts" / "githooks" / "pre-commit"
+    restore = "none"
+    if hook.exists() and GRAFT_MARKER in hook.read_text():
+        m = re.search(r"restore_hookspath=(\S+)", hook.read_text())
+        if m:
+            restore = m.group(1)
+    if restore == "none":
+        subprocess.run(["git", "-C", str(dest), "config", "--unset", "core.hooksPath"],
+                       capture_output=True)
+    else:
+        subprocess.run(["git", "-C", str(dest), "config", "core.hooksPath", restore],
+                       capture_output=True)
+    removed = 0
+    for line in manifest.read_text().splitlines():
+        f = dest / line.strip()
+        if line.strip() and f.exists():
+            f.unlink(); removed += 1
+    for d in sorted((p for p in dest.rglob("*") if p.is_dir() and "mural" in p.parts
+                     or p == dest / "mural"), key=lambda x: -len(x.parts)):
+        try:
+            d.rmdir()
+        except OSError:
+            pass
+    for extra in (dest / "mural", dest / "scripts" / "githooks", dest / "scripts" / "hooks"):
+        if extra.exists():
+            try:
+                shutil.rmtree(extra) if extra.name == "mural" else extra.rmdir()
+            except OSError:
+                pass
+    print(f"ONBOARD REMOVED: {removed} grafted file(s) deleted; hooksPath restored to {restore}. "
+          f".claude merges left in place (review manually). Adoption commits stay in history (revert if desired).")
+    return 0
+
+
+LEAD_TTL_DAYS = 30
+
+def _source_events():
+    """All source.* events from the ledger, in order."""
+    lp = ledger_path()
+    if not lp.exists():
+        return []
+    out = []
+    for line in lp.read_text().splitlines():
+        try:
+            e = json.loads(line)
+        except Exception:
+            continue
+        if e.get("event", "").startswith("source."):
+            out.append(e)
+    return out
+
+
+def _reliability(passed, failed):
+    """Admiralty adaptation (RS-01M0GJ5SAGN5MSR5GSX5PFFVPK), numeric boundaries only."""
+    total = passed + failed
+    fr = (failed / total) if total else 0.0
+    if fr > 0.5:
+        return "E"
+    if fr > 0.25:
+        return "D"
+    if passed >= 25 and fr < 0.05:
+        return "B" if failed else "A"
+    if passed >= 10 and fr < 0.10:
+        return "B"
+    if passed >= 3 and fr <= 0.15:
+        return "C"
+    return "F"
+
+
+def cmd_source(args):
+    """Brownfield source registry (K5): add | log | score. ADR-0008 trust-but-verify.
+
+    Sources start at reliability F / credibility 6. Claims are tiered (ADR-0021 C):
+    behavioral -> --verify-cmd, the exit code IS the verdict; structural ->
+    pass|fail with --anchor citation. Only tiered claims count toward promotion.
+    `score` regenerates GENERATED mural/imports/sources.md; agents consume only
+    the anchored/lead/quarantined tri-state.
+    """
+    if not args:
+        print("usage: mural source add|log|score ...", file=sys.stderr); return 2
+    sub = args[0]
+
+    if sub == "add":
+        if len(args) < 2:
+            print("usage: mural source add <path>", file=sys.stderr); return 2
+        src = args[1]
+        if not (ROOT / src).exists():
+            print(f"SOURCE-FAIL: {src} does not exist", file=sys.stderr); return 1
+        if any(e for e in _source_events() if e["event"] == "source.add" and e.get("src") == src):
+            print(f"source {src}: already registered"); return 0
+        ledger_log("source.add", src=src, source_reliability="F", claim_credibility=6)
+        print(f"source {src}: registered at reliability F / credibility 6")
+        return 0
+
+    if sub == "log":
+        rest = args[1:]
+        if not rest:
+            print("usage: mural source log <src> [pass|fail] --claim \"...\" (--verify-cmd CMD | --anchor PATH)", file=sys.stderr)
+            return 2
+        src = rest[0]
+        stated = rest[1] if len(rest) > 1 and rest[1] in ("pass", "fail") else None
+        claim = cmd_arg = anchor = None
+        it = iter(range(len(rest)))
+        i = 1 if stated is None else 2
+        while i < len(rest):
+            if rest[i] == "--claim" and i + 1 < len(rest):
+                claim = rest[i + 1]; i += 2
+            elif rest[i] == "--verify-cmd" and i + 1 < len(rest):
+                cmd_arg = rest[i + 1]; i += 2
+            elif rest[i] == "--anchor" and i + 1 < len(rest):
+                anchor = rest[i + 1]; i += 2
+            else:
+                i += 1
+        if not claim:
+            print("SOURCE-FAIL: --claim required", file=sys.stderr); return 2
+        if not any(e for e in _source_events() if e["event"] == "source.add" and e.get("src") == src):
+            print(f"SOURCE-FAIL: {src} not registered (mural source add first)", file=sys.stderr)
+            return 1
+        if cmd_arg:  # behavioral tier: the command decides
+            r = subprocess.run(["bash", "-c", cmd_arg], capture_output=True, text=True, timeout=120)
+            verdict = "pass" if r.returncode == 0 else "fail"
+            extra = {"issue": os.environ["MURAL_ISSUE"]} if os.environ.get("MURAL_ISSUE") else {}
+            ledger_log("source.claim", src=src, claim=claim, tier="behavioral",
+                       verify_cmd=cmd_arg, exit_code=r.returncode, verdict=verdict, **extra)
+            print(f"claim [{verdict}] (behavioral, exit {r.returncode}): {claim}")
+            return 0 if verdict == "pass" else 1
+        if anchor:  # structural tier: anchored citation + stated verdict
+            if stated is None:
+                print("SOURCE-FAIL: structural claims need an explicit pass|fail", file=sys.stderr)
+                return 2
+            if not (ROOT / anchor).exists():
+                print(f"SOURCE-FAIL: anchor {anchor} does not exist", file=sys.stderr); return 1
+            h = hashlib.sha256((ROOT / anchor).read_bytes()).hexdigest()[:16]
+            extra = {"issue": os.environ["MURAL_ISSUE"]} if os.environ.get("MURAL_ISSUE") else {}
+            ledger_log("source.claim", src=src, claim=claim, tier="structural",
+                       anchor=anchor, anchor_hash=h, verdict=stated, **extra)
+            print(f"claim [{stated}] (structural, {anchor}@{h}): {claim}")
+            return 0
+        print("SOURCE-FAIL: tierless claim — give --verify-cmd (behavioral) or --anchor (structural); "
+              "untethered claims stay credibility 6 and never count (ADR-0021 fork C)", file=sys.stderr)
+        return 2
+
+    if sub == "score":
+        events = _source_events()
+        sources = {}
+        for e in events:
+            if e["event"] == "source.add":
+                sources.setdefault(e["src"], {"claims": [], "added": e.get("ts")})
+        for e in events:
+            if e["event"] == "source.claim" and e.get("src") in sources:
+                sources[e["src"]]["claims"].append(e)
+        lines = ["<!-- GENERATED by `scripts/mural source score` — do not hand-edit -->",
+                 "# Imported sources — trust-but-verify registry (ADR-0008)", ""]
+        lines.append("| Source | Reliability | verified_pass | verified_fail | last_verified | note |")
+        lines.append("|---|---|---|---|---|---|")
+        rows = []
+        for src, data in sorted(sources.items()):
+            passed = sum(1 for c in data["claims"] if c["verdict"] == "pass")
+            failed = sum(1 for c in data["claims"] if c["verdict"] == "fail")
+            rel_grade = _reliability(passed, failed)
+            last = max((c.get("ts", "") for c in data["claims"]), default="never")
+            note = "EXCLUDED from packets" if rel_grade == "E" else ""
+            lines.append(f"| {src} | {rel_grade} | {passed} | {failed} | {last} | {note} |")
+            rows.append((src, data))
+        lines += ["", "## Claims (tri-state; agents see only this)", ""]
+        now = time.time()
+        for src, data in rows:
+            for c in data["claims"]:
+                state = "anchored" if c["verdict"] == "pass" else "quarantined"
+                lines.append(f"- [{state}] ({src}, {c['tier']}) {c['claim']}")
+        # leads: registered sources with zero claims age toward the TTL
+        for src, data in rows:
+            if not data["claims"]:
+                lines.append(f"- [lead] ({src}) registered, no claims yet — TTL {LEAD_TTL_DAYS}d")
+        out = MURAL / "imports" / "sources.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("\n".join(lines) + "\n")
+        ledger_log("source.score", sources=len(sources))
+        print(f"score: {len(sources)} source(s) -> {out.relative_to(ROOT)}")
+        return 0
+
+    print(f"unknown source subcommand {sub}", file=sys.stderr)
+    return 2
+
+
+AUDIT_EXEMPT_NAMES = {"index.md", "DECISIONS.md", "map.md", "blueprint.json",
+                      "sources.md", "ratchet.json", "packet.md", "ledger.jsonl",
+                      "verdict.json", "audit-pre.json", "spec.md"}
+
+def _git_out(repo, *a):
+    return subprocess.run(["git", "-C", str(repo), *a],
+                          capture_output=True, text=True).stdout
+
+
+def _repo_state(repo):
+    """(HEAD sha, set of dirty paths) — the pre/post image an audit compares."""
+    head = _git_out(repo, "rev-parse", "HEAD").strip() or "no-git"
+    dirty = set()
+    for line in _git_out(repo, "status", "--porcelain").splitlines():
+        if not line.strip():
+            continue
+        path = line[3:].strip()
+        if " -> " in path:            # renames report both sides
+            old_p, new_p = path.split(" -> ", 1)
+            dirty.add(old_p.strip())
+            dirty.add(new_p.strip())
+        else:
+            dirty.add(path)
+    return head, dirty
+
+
+def _audit_repos():
+    """[(label, path)] — this repo first, then mural/engineering/audit-repos.txt."""
+    repos = [(ROOT.name, ROOT)]
+    listing = MURAL / "engineering" / "audit-repos.txt"
+    if listing.exists():
+        for line in listing.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            path = pathlib.Path(line).expanduser()
+            if not path.is_absolute():
+                path = (ROOT / path).resolve()
+            if path.is_dir():
+                repos.append((path.name, path))
+    return repos
+
+
+def _audit_exempt(path):
+    """Script-owned artifacts are never worker writes."""
+    name = path.rsplit("/", 1)[-1]
+    if name in AUDIT_EXEMPT_NAMES:
+        return True
+    return "/gate/" in path or path.endswith("/.gitkeep")
+
+
+def _ignored_paths(repo, paths):
+    """Paths git itself ignores — build output is never a worker write."""
+    if not paths:
+        return set()
+    r = subprocess.run(["git", "-C", str(repo), "check-ignore", "--stdin"],
+                       input="\n".join(paths), capture_output=True, text=True)
+    return {p.strip() for p in r.stdout.splitlines() if p.strip()}
+
+
+def _concurrent_owners(reg, auditee, since):
+    """{prefix: issue-id} for OTHER issues whose work overlaps this audit window.
+
+    Parallel waves are the mode the kernel promotes (`mural plan` fans out disjoint
+    write-sets), so another gated issue's declared paths changing is CONCURRENT
+    WORK, not a violation by this worker. Field failure that forced this: an audit
+    reported 175 findings, every one of them another issue's legitimate work.
+    """
+    owners = {}
+    for did, (_p, fm, _b) in reg.items():
+        if fm.get("type") != "issue" or did == auditee:
+            continue
+        active = fm.get("status") in {"ready", "in-progress"}
+        receipt = fm.get("receipt_time") or ""
+        # stamps are all %Y-%m-%dT%H:%M:%SZ, so lexicographic compare is exact
+        if not (active or (since and receipt >= since)):
+            continue
+        for path in fm.get("paths") or []:
+            owners[path.rstrip("/*")] = did
+    return owners
+
+
+def cmd_audit(args):
+    """Mechanical write-set post-flight (F-01M0KYEZRAC3ASH1YQ288JKW8T).
+
+    Prompts do not bind workers; hashes do. --snapshot before dispatch,
+    --check after: any path changed outside the declared write-set — or ANY
+    change in a foreign mural-managed repo — is a violation.
+    Exit 0 clean, 1 violations, 2 usage, 3 no snapshot (honest skip).
+    """
+    if len(args) < 2 or args[1] not in ("--snapshot", "--check"):
+        print("usage: mural audit ISS-<id> --snapshot|--check", file=sys.stderr)
+        return 2
+    iid, mode = args[0], args[1]
+    reg, _ = load_registry()
+    if iid not in reg:
+        print(f"unknown id {iid}", file=sys.stderr)
+        return 1
+    path, fm, _ = reg[iid]
+    snap_p = path.parent / "gate" / "audit-pre.json"
+
+    if mode == "--snapshot":
+        state = {}
+        for label, repo in _audit_repos():
+            head, dirty = _repo_state(repo)
+            state[label] = {"path": str(repo), "head": head, "dirty": sorted(dirty)}
+        state["_ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        snap_p.parent.mkdir(parents=True, exist_ok=True)
+        snap_p.write_text(json.dumps(state, indent=2) + "\n")
+        ledger_log("audit.snapshot", id=iid, repos=len(state))
+        print(f"audit snapshot: {iid} — {len(state) - 1} repo(s) recorded")
+        return 0
+
+    if not snap_p.exists():
+        print(f"AUDIT-SKIP {iid}: no snapshot — run `mural audit {iid} --snapshot` "
+              f"before dispatch (a missing pre-image is not a pass)", file=sys.stderr)
+        return 3
+    pre = json.loads(snap_p.read_text())
+    writeset = fm.get("paths") or []
+
+    def in_writeset(f):
+        for o in writeset:
+            o = o.rstrip("/*")
+            if f == o or f.startswith(o.rstrip("/") + "/"):
+                return True
+        return False
+
+    violations, concurrent = [], []
+
+    class _Owners:
+        def __init__(self, mapping):
+            self.mapping = mapping
+
+        def get_owner(self, f):
+            for prefix, did in self.mapping.items():
+                if f == prefix or f.startswith(prefix.rstrip("/") + "/"):
+                    return did
+            return None
+
+    owners = _Owners(_concurrent_owners(reg, iid, pre.get("_ts")))
+
+    for label, repo in _audit_repos():
+        before = pre.get(label)
+        if before is None:
+            violations.append(f"{label}: repo not in the snapshot (added mid-flight?)")
+            continue
+        head, dirty = _repo_state(repo)
+        changed = set(dirty) - set(before.get("dirty", []))
+        if head != before.get("head"):
+            for f in _git_out(repo, "diff", "--name-only",
+                              f"{before['head']}..{head}").splitlines():
+                if f.strip():
+                    changed.add(f.strip())
+        own = repo.resolve() == ROOT.resolve()
+        candidates = [f for f in sorted(changed)
+                      if not _audit_exempt(f) and not (own and in_writeset(f))]
+        ignored = _ignored_paths(repo, candidates)
+        for f in candidates:
+            if f in ignored:
+                continue
+            owner = owners.get_owner(f) if own else None
+            if owner:
+                concurrent.append(f"{label}: {f} — concurrent, attributed to {owner}")
+                continue
+            where = "declared write-set" if own else f"FOREIGN repo {label}"
+            violations.append(f"{label}: {f} — outside the {where}")
+
+    for c in concurrent:
+        print(f"audit note {c}")
+    if violations:
+        for v in violations:
+            print(f"AUDIT-FAIL {v}", file=sys.stderr)
+        print(f"audit {iid}: FAIL ({len(violations)} violation(s))")
+        ledger_log("audit.check", id=iid, result="fail", violations=len(violations))
+        return 1
+    ledger_log("audit.check", id=iid, result="pass")
+    extra = f" ({len(concurrent)} concurrent, attributed)" if concurrent else ""
+    print(f"audit {iid}: PASS — no writes outside the declared write-set{extra}")
+    return 0
+
+
+def cmd_mutate(args):
+    """Mutation proof: the runs-red equivalent for characterization tests.
+
+    runs-red assumes you are FIXING something. Tests that characterize
+    already-correct code pass on their first run, so `mural red` rightly refuses
+    them — and the doctrine is then silent on whether they are vacuous. Break the
+    code deliberately, confirm a SPECIFIC test dies, restore byte-identical.
+
+    A mutation that kills nothing IS the vacuous-test signal, and fails the gate.
+    Exit 0 proven, 1 mutation survived, 2 usage/target error.
+    """
+    if len(args) < 2:
+        print("usage: mural mutate ISS-<id> --file <path> --replace OLD --with NEW",
+              file=sys.stderr)
+        return 2
+    iid = args[0]
+    opts = {}
+    i = 1
+    while i < len(args) - 1:
+        if args[i] in ("--file", "--replace", "--with"):
+            opts[args[i][2:]] = args[i + 1]
+            i += 2
+        else:
+            i += 1
+    missing = [k for k in ("file", "replace", "with") if k not in opts]
+    if missing:
+        print(f"usage: mural mutate — missing {', '.join('--' + m for m in missing)}",
+              file=sys.stderr)
+        return 2
+
+    reg, _ = load_registry()
+    if iid not in reg:
+        print(f"unknown id {iid}", file=sys.stderr)
+        return 1
+    path, fm, body = reg[iid]
+    if not fm.get("acceptance"):
+        print(f"MUTATE-FAIL {iid}: no acceptance to kill", file=sys.stderr)
+        return 2
+
+    target = ROOT / opts["file"]
+    if not target.exists():
+        print(f"MUTATE-FAIL: no such file {opts['file']}", file=sys.stderr)
+        return 2
+    original = target.read_text()
+    if opts["replace"] not in original:
+        print(f"MUTATE-FAIL: {opts['file']} does not contain the text to replace — "
+              f"a mutation that cannot be applied proves nothing", file=sys.stderr)
+        return 2
+    before = hashlib.sha256(original.encode()).hexdigest()[:16]
+
+    def _purge_bytecode():
+        """Stale bytecode can fake BOTH verdicts, so purge it around every write.
+
+        A mutation is usually the same length as the code it replaces (`a + b` ->
+        `a - b`), and CPython invalidates a .pyc on (mtime, size) with second
+        granularity. Mutate and restore inside one second and the interpreter
+        happily reuses the old bytecode — the mutation appears to SURVIVE, which
+        this tool would report as a vacuous test. Verified: it does happen.
+        """
+        for pycache in target.parent.rglob("__pycache__"):
+            shutil.rmtree(pycache, ignore_errors=True)
+
+    try:
+        target.write_text(original.replace(opts["replace"], opts["with"], 1))
+        _purge_bytecode()
+        ok, msg, outputs = run_acceptance(fm)
+    finally:
+        # restore FIRST, always — a mutation must never outlive its own run
+        target.write_text(original)
+        _purge_bytecode()
+    after = hashlib.sha256(target.read_text().encode()).hexdigest()[:16]
+    if after != before:
+        print(f"MUTATE-FAIL: {opts['file']} was not restored ({before} -> {after})",
+              file=sys.stderr)
+        return 1
+
+    if ok:
+        print(f"MUTATE-FAIL {iid}: the mutation SURVIVED — acceptance still passes "
+              f"with {opts['replace']!r} replaced by {opts['with']!r}. The test is "
+              f"vacuous for this behaviour; it proves nothing.", file=sys.stderr)
+        ledger_log("mutate", id=iid, result="survived", file=opts["file"])
+        return 1
+
+    fm["mutation_receipt"] = hashlib.sha256("".join(outputs).encode()).hexdigest()[:16]
+    fm["mutation_time"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    fm["mutation_sha"] = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                                        capture_output=True, text=True).stdout.strip() or "no-git"
+    fm["mutation_restored"] = before
+    path.write_text(serialize(fm, body))
+    ledger_log("mutate", id=iid, result="killed", file=opts["file"],
+               receipt=fm["mutation_receipt"])
+    regen_index()
+    print(f"mutate: {iid} — mutation killed the acceptance ({fm['mutation_receipt']}); "
+          f"{opts['file']} restored byte-identical ({before})")
+    return 0
+
+
+def cmd_seed(args):
+    """Found a new Mural-managed project from the kernel template (the voice-mirror pattern)."""
+    import shutil
+    if not args: print("usage: mural seed <name> [parent-dir]", file=sys.stderr); return 2
+    name = args[0]
+    parent = pathlib.Path(args[1]).expanduser() if len(args) > 1 else pathlib.Path.home() / "Development"
+    dest = parent / name
+    if dest.exists():
+        print(f"SEED-FAIL: {dest} already exists", file=sys.stderr); return 1
+    d = dest
+    for sub in ["scripts/hooks", "scripts/githooks", "tests", ".claude",
+                "mural/product", "mural/design", "mural/engineering/modules", "mural/issues",
+                "mural/questions", "mural/findings", "mural/changes", "mural/decisions",
+                "mural/assumptions", "mural/reuse/scans", "mural/qa/plans", "mural/manual",
+                "mural/process/playbooks", "mural/process/retros"]:
+        (d / sub).mkdir(parents=True)
+    shutil.copy2(ROOT / "scripts" / "mural", d / "scripts" / "mural")
+    shutil.copy2(ROOT / "scripts" / "dispatch.sh", d / "scripts" / "dispatch.sh")
+    for f in (ROOT / "scripts" / "hooks").iterdir():
+        shutil.copy2(f, d / "scripts" / "hooks" / f.name)
+    shutil.copy2(ROOT / "scripts" / "githooks" / "pre-commit", d / "scripts" / "githooks" / "pre-commit")
+    shutil.copytree(ROOT / ".claude" / "agents", d / ".claude" / "agents")
+    shutil.copytree(ROOT / ".claude" / "skills", d / ".claude" / "skills")
+    shutil.copy2(ROOT / ".claude" / "settings.json", d / ".claude" / "settings.json")
+    shutil.copy2(ROOT / "templates" / "smoke-minimal.sh", d / "tests" / "smoke.sh")
+    for pb in SEED_PLAYBOOKS:
+        shutil.copy2(ROOT / "mural" / "process" / "playbooks" / pb, d / "mural" / "process" / "playbooks" / pb)
+    (d / "mural" / "process" / "templates").mkdir(parents=True, exist_ok=True)
+    for tmpl in sorted((ROOT / "mural" / "process" / "templates").glob("*.tmpl")):
+        shutil.copy2(tmpl, d / "mural" / "process" / "templates" / tmpl.name)
+    shutil.copy2(ROOT / "mural" / "glossary.md", d / "mural" / "glossary.md")
+    shutil.copy2(ROOT / "mural" / "design" / "system.md", d / "mural" / "design" / "system.md")
+    for sub in ["mural/assumptions", "mural/findings", "mural/changes", "mural/questions",
+                "mural/qa/plans", "mural/engineering/modules", "mural/issues", "mural/process/retros"]:
+        (d / sub / ".gitkeep").touch()
+    (d / "mural" / "process" / "ledger.jsonl").touch()
+
+    def doc(rel, docid, title, owner, body):
+        (d / rel).write_text(f"---\nid: {docid}\ntype: evergreen\nstatus: active\n"
+                             f"owner: {owner}\ntitle: {title}\nversion: 1\n---\n{body}")
+    doc("mural/product/vision.md", "DOC-vision", f"Vision — {name}", "pm",
+        "\n<what exists off the shelf — incl. AI skills and MCP servers — and why we build anyway>\n\nReplace with the north star; this blank correctly gates refinement until the PM writes it.\n")
+    doc("mural/engineering/borders.md", "DOC-borders", f"Blueprint — walls and cavities of {name}", "eng",
+        "\n## Walls (module borders)\n\n| Module | Owns (write-set) | Interface (the doorway) |\n|---|---|---|\n\n## Cavities (pre-routed channels)\n\n- **Universal defaults**: a11y, i18n, EU-compliance, security/privacy (ADR-0012 inherited).\n")
+    doc("mural/manual/index.md", "DOC-manual", f"Manual — {name}", "eng",
+        "\n<fill in>: what this software does and the critical things a person needs to know (ADR-0018).\n")
+    doc("mural/reuse/registry.md", "DOC-reuse-registry", f"Reuse registry — {name}", "pm",
+        "\n| Adopted | From | Why | Exit strategy |\n|---|---|---|---|\n")
+    (d / "mural" / "decisions" / "0001-seeded-from-mural-kernel.md").write_text(f"""---
+id: ADR-0001
+type: adr
+status: active
+owner: user
+title: {name} seeded from the mural kernel template
+version: 1
+---
+
+## Context
+
+{name} is a Mural-managed project seeded by `mural seed` on the voice-mirror founding
+pattern. Platform doctrine lives in the kernel (~/Development/mural, ADRs 0001+).
+
+## Decision
+
+Platform ADRs are inherited by reference, never copied; this repo's decisions start here
+and cover {name} only.
+
+## Considered options
+
+(a) inherit by reference — chosen; (b) copy platform ADRs — duplicated truth drifts.
+
+## Consequences
+
+Kernel changes propagate by deliberate re-seed decisions, recorded here when taken.
+""")
+    run = lambda *cmd: subprocess.run(cmd, cwd=d, capture_output=True, text=True)
+    run("git", "init", "-q")
+    run("git", "config", "core.hooksPath", "scripts/githooks")
+    r = subprocess.run([str(d / "scripts" / "mural"), "index"], cwd=d, capture_output=True, text=True)
+    if r.returncode != 0:
+        print("SEED-FAIL: seeded index red\n" + r.stderr, file=sys.stderr); return 1
+    run("git", "add", "-A")
+    r = run("git", "-c", "user.email=mural@" + name, "-c", "user.name=mural",
+            "commit", "-q", "-m", f"{name}: founded from mural kernel template (ADR-0001)")
+    if r.returncode != 0:
+        print("SEED-FAIL: founding commit refused (gates red)\n" + r.stderr + r.stdout, file=sys.stderr); return 1
+    r = subprocess.run(["bash", str(d / "tests" / "smoke.sh")], cwd=d, capture_output=True, text=True)
+    if r.returncode != 0:
+        print("SEED-FAIL: seeded smoke red\n" + r.stdout + r.stderr, file=sys.stderr); return 1
+    print(f"seeded: {dest} — green, gated, founded (cd there, run claude, brief the PM)")
+    return 0
+
+def next_adr_number():
+    nums = [int(m.group(1)) for p in (MURAL / "decisions").glob("*.md")
+            if (m := re.match(r"(\d{4})-", p.name))]
+    return max(nums, default=0) + 1
+
+TEMPLATE_BODY = {
+    "asm": "\n## Assumption\n\n<claim>\n\n## Validation plan\n\n<how we will validate or falsify>\n",
+    "prd": "\n## Problem\n\n## Non-goals\n\n## Requirements\n\n- WHEN <trigger>, THE SYSTEM SHALL <behavior>\n\n## Acceptance\n\n- Given <state> When <action> Then <outcome>\n\n## Build-vs-adopt\n\n<what exists off the shelf — incl. AI skills and MCP servers — and why we build anyway>\n",
+    "des": "\n## States\n\n<default / empty / loading / error / edge>\n\n## Out-of-scope\n",
+    "finding": "\n## Claim\n\n## Evidence\n\n<command output / logs / links — required>\n\n## Proposed amendment\n",
+    "co": "\n## Change\n\n## Blast radius\n\n<run scripts/mural impact <id> and paste>\n\n## Dispositions\n\n<keep / patch / kill per affected item>\n",
+    "scan": "\n## What exists\n\n## Verdict\n",
+    "qp": "\n## Criteria mapping\n\n<criterion -> runnable check>\n",
+}
+TEMPLATE_EXTRA = {
+    "prd": {"open_questions": [], "locales": ["all"], "compliance": ["gdpr", "eaa"], "data": ["none"]},
+    "des": {"upstream": []},
+    "finding": {"evidence": [], "invalidates": []},
+    "co": {"bumps": []},
+    "scan": {"verdict": "pending"},
+    "qp": {"upstream": []},
+}
+
+def cmd_new(args):
+    if len(args) < 2: print("usage: mural new <type> <slug>", file=sys.stderr); return 2
+    dtype, slug = args[0], args[1]
+    base_order = ["id", "type", "status", "owner", "title", "version"]
+    if dtype == "issue":
+        did = f"ISS-{ulid()}"
+        d = MURAL / "issues" / did
+        d.mkdir(parents=True, exist_ok=True)
+        out = d / "spec.md"
+        fm = {"id": did, "type": "issue", "status": "draft", "owner": "eng",
+              "title": slug.replace("-", " "), "version": 1, "upstream": [],
+              "derives_from": [], "depends": [], "paths": [], "acceptance": [],
+              "cw_tokens": 0, "cw_files": 0, "phase": "breadth", "model": "mid",
+              "max_turns": 25,
+              "_order": base_order + ["upstream", "derives_from", "depends", "paths",
+                                       "acceptance", "cw_tokens", "cw_files", "phase",
+                                       "model", "max_turns"]}
+        out.write_text(serialize(fm, "\n## Contract\n\n<exact interface / behavior>\n"))
+    elif dtype == "adr":
+        n = next_adr_number()
+        did = f"ADR-{n:04d}"
+        out = MURAL / "decisions" / f"{n:04d}-{slug}.md"
+        fm = {"id": did, "type": "adr", "status": "active", "owner": "user",
+              "title": slug.replace("-", " "), "version": 1, "_order": base_order}
+        out.write_text(serialize(fm, "\n## Context\n\n## Decision\n\n## Considered options\n\n## Consequences\n"))
+    elif dtype in NEW_DIRS:
+        did = f"{NEW_PREFIX[dtype]}-{ulid()}"
+        out = MURAL / NEW_DIRS[dtype] / f"{did}-{slug}.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fm = {"id": did, "type": dtype,
+              "status": "unvalidated" if dtype == "asm" else "draft",
+              "owner": "pm", "title": slug.replace("-", " "), "version": 1,
+              "_order": list(base_order)}
+        for k, v in TEMPLATE_EXTRA.get(dtype, {}).items():
+            fm[k] = v; fm["_order"].append(k)
+        out.write_text(serialize(fm, TEMPLATE_BODY.get(dtype, "\n## Notes\n")))
+    else:
+        print(f"unknown type {dtype} (types: issue adr {' '.join(sorted(NEW_DIRS))})", file=sys.stderr)
+        return 2
+    regen_index()
+    print(out.relative_to(ROOT))
+    return 0
+
+def main():
+    cmds = {"check": cmd_check, "index": cmd_index, "impact": cmd_impact, "packet": cmd_packet,
+            "gate": cmd_gate, "plan": cmd_plan, "verify": cmd_verify, "done": cmd_done,
+            "new": cmd_new, "map": cmd_map, "calibrate": cmd_calibrate, "anchor": cmd_anchor, "health": cmd_health, "red": cmd_red, "seed": cmd_seed, "onboard": cmd_onboard, "source": cmd_source,
+            "audit": cmd_audit, "mutate": cmd_mutate}
+    if len(sys.argv) < 2 or sys.argv[1] in {"-h", "--help", "help"}:
+        print(__doc__)
+        print("commands: " + " | ".join(sorted(cmds)))
+        return 0
+    fn = cmds.get(sys.argv[1])
+    if not fn:
+        print(f"unknown command {sys.argv[1]}", file=sys.stderr); return 2
+    return fn(sys.argv[2:])
+
+if __name__ == "__main__":
+    sys.exit(main())

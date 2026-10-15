@@ -1,0 +1,37 @@
+---
+id: <ISS-mint-with-mural-new>
+type: issue
+status: draft
+owner: qa
+title: SECURITY — understand exposure
+version: 1
+upstream: [<PRD-onboard-id>@1]
+derives_from: []
+depends: [<wave-dependencies-or-empty>]
+paths: [<founding-doc-path>, mural/process/ledger.jsonl]
+acceptance: [scripts/mural check]
+cw_tokens: <estimate>
+cw_files: <estimate>
+phase: breadth
+model: mid
+max_turns: 25
+method: <doc-first-verify|code-first-survey|test-trace|git-archaeology|entrypoint-walk|dep-graph>
+methods_secondary: []
+claims_by_method: []
+cost_tokens: 0
+cost_minutes: 0
+claims_checked: 0
+claims_verified: 0
+claims_failed: 0
+dead_ends: 0
+anchors_laid: 0
+sources_graded: 0
+method_notes: <one line at done-time>
+---
+## Contract
+
+Enumerate trust boundaries, secrets handling, external channels as a finding + armament constraints for future packets. Wave 3, needs ENG+QA.
+
+Instrumentation keys above are filled at done-time (REQ-002: the campaign grades
+its own methods). Sources consumed get mural source log entries per claim (tiered:
+--verify-cmd behavioral, --anchor structural).
