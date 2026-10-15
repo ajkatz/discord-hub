@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVC51E683DF67K2RD058
 type: issue
-status: draft
+status: done
 owner: eng
 title: silent triage — tags are the answer; kind tags; set-tags op adds missing forum tags
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [ba984bc2ca5ce852611cddec2c5a1a33713930be, ba249ac946cf1cd234c250aaadb50701b1c4fa22]
 shipped_time: 2026-10-15T04:42:49Z
+receipt_sha: 3c3dd2b117c1612b514d28bb1570dd9dbb400d0d
+receipt_time: 2026-10-15T19:43:06Z
+receipt_tests: 472a0dd417690bf3
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 2.9
 ---
 
 ## Contract

@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVMWMACX1JZ9WTAPPRF0
 type: issue
-status: draft
+status: done
 owner: eng
 title: bot reloads hub.json on every channel-map refresh
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [77aecb35cae73873143977f2581377bc3ccf6653]
 shipped_time: 2026-10-15T05:28:58Z
+receipt_sha: 3c3dd2b117c1612b514d28bb1570dd9dbb400d0d
+receipt_time: 2026-10-15T19:43:11Z
+receipt_tests: 883acc6b5fb04a6e
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 1.0
 ---
 
 ## Contract

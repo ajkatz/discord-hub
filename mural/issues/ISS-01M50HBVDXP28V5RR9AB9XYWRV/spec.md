@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVDXP28V5RR9AB9XYWRV
 type: issue
-status: draft
+status: done
 owner: eng
 title: one #feedback forum per project — kind + status tags; #bug-reports removed
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [0804576daeb74ff52274c8c855bb4a8ae0f10133]
 shipped_time: 2026-10-15T05:17:52Z
+receipt_sha: 3c3dd2b117c1612b514d28bb1570dd9dbb400d0d
+receipt_time: 2026-10-15T19:43:10Z
+receipt_tests: 05495e2fa7c261c2
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 3.9
 ---
 
 ## Contract

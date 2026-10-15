@@ -251,7 +251,7 @@
    "id": "ISS-01M50HBVC51E683DF67K2RD058",
    "kind": "issue",
    "title": "silent triage \u2014 tags are the answer; kind tags; set-tags op adds missing forum tags",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M50HBVC51E683DF67K2RD058/spec.md",
    "writes": [
     "src/apply.ts",
@@ -274,7 +274,7 @@
    "id": "ISS-01M50HBVDXP28V5RR9AB9XYWRV",
    "kind": "issue",
    "title": "one #feedback forum per project \u2014 kind + status tags; #bug-reports removed",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M50HBVDXP28V5RR9AB9XYWRV/spec.md",
    "writes": [
     "README.md",
@@ -346,7 +346,7 @@
    "id": "ISS-01M50HBVMWMACX1JZ9WTAPPRF0",
    "kind": "issue",
    "title": "bot reloads hub.json on every channel-map refresh",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M50HBVMWMACX1JZ9WTAPPRF0/spec.md",
    "writes": [
     "src/bot/index.ts"
