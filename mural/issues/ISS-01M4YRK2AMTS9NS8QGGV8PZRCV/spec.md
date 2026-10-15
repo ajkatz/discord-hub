@@ -1,11 +1,11 @@
 ---
 id: ISS-01M4YRK2AMTS9NS8QGGV8PZRCV
 type: issue
-status: draft
+status: done
 owner: eng
 title: onboarding merge — preserve ids, add/remove options, placeholder prompt id
 version: 1
-upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@1]
+upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@2]
 derives_from: []
 depends: [ISS-01M4YRK271FFV7JQGVRH31XMB5]
 paths: [src/onboarding.ts, tests/onboarding.test.ts, tests/accept-onboarding.sh, mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md]
@@ -15,6 +15,15 @@ cw_files: 4
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: a3c39d5244fde2dc
+red_time: 2026-10-15T03:14:00Z
+red_sha: ecd64ded20e66b9d84014ba16dd610d8e3f36a27
+receipt_sha: ecd64ded20e66b9d84014ba16dd610d8e3f36a27
+receipt_time: 2026-10-15T03:18:58Z
+receipt_tests: 1d40c7e27046af24
+actual_files: 0
+actual_files_total: 15
+actual_wall_s: 0.6
 ---
 ## Contract
 

@@ -1,11 +1,11 @@
 ---
 id: ISS-01M4YRK271FFV7JQGVRH31XMB5
 type: issue
-status: draft
+status: done
 owner: eng
 title: model + planner — hub.json truth, pure diff against a guild snapshot
 version: 1
-upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@1]
+upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@2]
 derives_from: []
 depends: []
 paths: [src/model.ts, src/plan.ts, tests/model.test.ts, tests/plan.test.ts, tests/helpers.ts, tests/accept-plan.sh, package.json, tsconfig.json]
@@ -15,6 +15,15 @@ cw_files: 8
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: 9da24775bf02dbe9
+red_time: 2026-10-15T03:13:58Z
+red_sha: ecd64ded20e66b9d84014ba16dd610d8e3f36a27
+receipt_sha: ecd64ded20e66b9d84014ba16dd610d8e3f36a27
+receipt_time: 2026-10-15T03:18:56Z
+receipt_tests: e33ab36359d82008
+actual_files: 0
+actual_files_total: 15
+actual_wall_s: 1.3
 ---
 ## Contract
 

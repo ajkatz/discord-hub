@@ -1,11 +1,11 @@
 ---
 id: ISS-01M4YRK28WWY8PXJ54M3MNX4M0
 type: issue
-status: draft
+status: done
 owner: eng
 title: discord api seam + in-memory fake + applier — idempotent execution
 version: 1
-upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@1]
+upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@2]
 derives_from: []
 depends: [ISS-01M4YRK271FFV7JQGVRH31XMB5]
 paths: [src/discord.ts, src/fake.ts, src/apply.ts, tests/apply.test.ts, tests/accept-apply.sh]
@@ -15,6 +15,15 @@ cw_files: 5
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: 7e92b9c5cb4a4128
+red_time: 2026-10-15T03:13:59Z
+red_sha: ecd64ded20e66b9d84014ba16dd610d8e3f36a27
+receipt_sha: ecd64ded20e66b9d84014ba16dd610d8e3f36a27
+receipt_time: 2026-10-15T03:18:57Z
+receipt_tests: 444374ce86a456a9
+actual_files: 0
+actual_files_total: 15
+actual_wall_s: 0.8
 ---
 ## Contract
 

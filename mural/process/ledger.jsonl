@@ -1,0 +1,13 @@
+{"ts": "2026-10-15T03:13:58Z", "event": "red", "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5", "red_receipt": "9da24775bf02dbe9"}
+{"ts": "2026-10-15T03:13:58Z", "event": "gate-ready", "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5", "result": "fail", "errors": 1}
+{"ts": "2026-10-15T03:13:59Z", "event": "red", "id": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0", "red_receipt": "7e92b9c5cb4a4128"}
+{"ts": "2026-10-15T03:13:59Z", "event": "gate-ready", "id": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0", "result": "fail", "errors": 1}
+{"ts": "2026-10-15T03:14:00Z", "event": "red", "id": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV", "red_receipt": "a3c39d5244fde2dc"}
+{"ts": "2026-10-15T03:14:00Z", "event": "gate-ready", "id": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV", "result": "fail", "errors": 1}
+{"ts": "2026-10-15T03:18:06Z", "event": "gate-ready", "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5", "result": "fail", "errors": 1}
+{"ts": "2026-10-15T03:18:06Z", "event": "gate-ready", "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5", "result": "pass", "live": false}
+{"ts": "2026-10-15T03:18:06Z", "event": "gate-ready", "id": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0", "result": "pass", "live": false}
+{"ts": "2026-10-15T03:18:07Z", "event": "gate-ready", "id": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV", "result": "pass", "live": false}
+{"ts": "2026-10-15T03:18:56Z", "event": "done", "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5", "receipt_sha": "ecd64ded20e66b9d84014ba16dd610d8e3f36a27", "receipt_tests": "e33ab36359d82008", "predicted_files": 8, "actual_files": 0, "predicted_tokens": 9000, "actual_tokens": null, "wall_s": 1.3}
+{"ts": "2026-10-15T03:18:57Z", "event": "done", "id": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0", "receipt_sha": "ecd64ded20e66b9d84014ba16dd610d8e3f36a27", "receipt_tests": "444374ce86a456a9", "predicted_files": 5, "actual_files": 0, "predicted_tokens": 9000, "actual_tokens": null, "wall_s": 0.8}
+{"ts": "2026-10-15T03:18:58Z", "event": "done", "id": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV", "receipt_sha": "ecd64ded20e66b9d84014ba16dd610d8e3f36a27", "receipt_tests": "1d40c7e27046af24", "predicted_files": 4, "actual_files": 0, "predicted_tokens": 5000, "actual_tokens": null, "wall_s": 0.6}

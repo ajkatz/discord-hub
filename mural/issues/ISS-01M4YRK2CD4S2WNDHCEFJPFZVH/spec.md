@@ -5,7 +5,7 @@ status: draft
 owner: eng
 title: cli + runbook + readme — init, new, plan, apply, archive
 version: 1
-upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@1]
+upstream: [PRD-01M4YRFMPVGJJ0XENSA97NBGBW@2]
 derives_from: []
 depends: [ISS-01M4YRK271FFV7JQGVRH31XMB5, ISS-01M4YRK28WWY8PXJ54M3MNX4M0, ISS-01M4YRK2AMTS9NS8QGGV8PZRCV]
 paths: [src/cli.ts, bin/discord-hub.mjs, docs/runbook.md, README.md, hub.example.json, tests/cli.test.ts, tests/fixtures, tests/accept-cli.sh, mural/manual/index.md, .gitignore]

@@ -1,9 +1,143 @@
 {
  "schema": "mural-blueprint/0.1",
- "rooms": [],
+ "rooms": [
+  {
+   "module": "model",
+   "writes": [
+    "src/model.ts"
+   ]
+  },
+  {
+   "module": "plan",
+   "writes": [
+    "src/plan.ts"
+   ]
+  },
+  {
+   "module": "discord",
+   "writes": [
+    "src/discord.ts",
+    "src/fake.ts"
+   ]
+  },
+  {
+   "module": "apply",
+   "writes": [
+    "src/apply.ts"
+   ]
+  },
+  {
+   "module": "onboarding",
+   "writes": [
+    "src/onboarding.ts"
+   ]
+  },
+  {
+   "module": "cli",
+   "writes": [
+    "src/cli.ts",
+    "bin/discord-hub.mjs"
+   ]
+  }
+ ],
  "cavities": [
+  "GitHub mirror",
+  "Multi-guild",
   "Universal defaults"
  ],
- "nodes": [],
- "edges": []
+ "nodes": [
+  {
+   "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5",
+   "kind": "issue",
+   "title": "model + planner \u2014 hub.json truth, pure diff against a guild snapshot",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md",
+   "writes": [
+    "src/model.ts",
+    "src/plan.ts",
+    "tests/model.test.ts",
+    "tests/plan.test.ts",
+    "tests/helpers.ts",
+    "tests/accept-plan.sh",
+    "package.json",
+    "tsconfig.json"
+   ]
+  },
+  {
+   "id": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0",
+   "kind": "issue",
+   "title": "discord api seam + in-memory fake + applier \u2014 idempotent execution",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md",
+   "writes": [
+    "src/discord.ts",
+    "src/fake.ts",
+    "src/apply.ts",
+    "tests/apply.test.ts",
+    "tests/accept-apply.sh"
+   ]
+  },
+  {
+   "id": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV",
+   "kind": "issue",
+   "title": "onboarding merge \u2014 preserve ids, add/remove options, placeholder prompt id",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md",
+   "writes": [
+    "src/onboarding.ts",
+    "tests/onboarding.test.ts",
+    "tests/accept-onboarding.sh",
+    "mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md"
+   ]
+  },
+  {
+   "id": "ISS-01M4YRK2CD4S2WNDHCEFJPFZVH",
+   "kind": "issue",
+   "title": "cli + runbook + readme \u2014 init, new, plan, apply, archive",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md",
+   "writes": [
+    "src/cli.ts",
+    "bin/discord-hub.mjs",
+    "docs/runbook.md",
+    "README.md",
+    "hub.example.json",
+    "tests/cli.test.ts",
+    "tests/fixtures",
+    "tests/accept-cli.sh",
+    "mural/manual/index.md",
+    ".gitignore"
+   ]
+  },
+  {
+   "id": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "kind": "prd",
+   "title": "discord-hub \u2014 one server, one sub-community per plugin, spawned by CLI",
+   "status": "draft",
+   "sourceLocation": "mural/product/PRD-01M4YRFMPVGJJ0XENSA97NBGBW-discord-hub.md",
+   "writes": []
+  }
+ ],
+ "edges": [
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YRK271FFV7JQGVRH31XMB5",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YRK2CD4S2WNDHCEFJPFZVH",
+   "type": "derives"
+  }
+ ]
 }

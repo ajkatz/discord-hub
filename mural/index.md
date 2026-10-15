@@ -16,9 +16,9 @@
 - DOC-vision — Vision — discord-hub [active] (mural/product/vision.md)
 
 ## issue
-- ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [draft] (mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md)
-- ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [draft] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
-- ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [draft] (mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md)
+- ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [done] (mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md)
+- ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [done] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
+- ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [done] (mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md)
 - ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [draft] (mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md)
 
 ## playbook
