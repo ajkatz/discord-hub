@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
 
 describe('announcer', () => {
   it('announce.mjs parses', () => {
@@ -10,9 +11,10 @@ describe('announcer', () => {
 
   it('both workflow files parse as YAML (an unquoted colon in a description broke every caller once)', () => {
     for (const f of ['.github/workflows/announce.yml', 'templates/discord-announce.yml']) {
-      const r = spawnSync('python3', ['-c', `import yaml,sys; yaml.safe_load(open(sys.argv[1]))`, f], { encoding: 'utf8' });
-      expect(r.status, `${f}: ${r.stderr}`).toBe(0);
+      expect(() => parse(readFileSync(f, 'utf8')), f).not.toThrow();
     }
+    const called = parse(readFileSync('.github/workflows/announce.yml', 'utf8'));
+    expect(Object.keys(called.on.workflow_call.inputs)).toEqual(['project_name', 'project_description', 'hub_ref']);
   });
 
   it('the reusable workflow is callable and declares both secrets', () => {
