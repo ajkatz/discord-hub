@@ -1,0 +1,7 @@
+{
+  "guildId": "100000000000000001",
+  "roles": [{ "id": "100000000000000001", "name": "@everyone" }],
+  "channels": [],
+  "webhooks": [],
+  "onboarding": { "enabled": false, "prompts": [] }
+}

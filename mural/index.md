@@ -20,6 +20,9 @@
 - ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [done] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
 - ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [done] (mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md)
 - ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [draft] (mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md)
+- ISS-01M4YS4JPD4GTYTH3BC87FY61Q — triage bot — classify, tag status, acknowledge, ledger; bug threads from #general [draft] (mural/issues/ISS-01M4YS4JPD4GTYTH3BC87FY61Q/spec.md)
+- ISS-01M4YS4JR84N865A2GE202351A — announcer — reusable push-summary workflow + caller template [draft] (mural/issues/ISS-01M4YS4JR84N865A2GE202351A/spec.md)
+- ISS-01M4YS4JT1NBYWK02Q0X4XHT4G — pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section [draft] (mural/issues/ISS-01M4YS4JT1NBYWK02Q0X4XHT4G/spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural/process/playbooks/armament.md)

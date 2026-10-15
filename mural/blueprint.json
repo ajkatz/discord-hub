@@ -50,7 +50,7 @@
    "id": "ISS-01M4YRK271FFV7JQGVRH31XMB5",
    "kind": "issue",
    "title": "model + planner \u2014 hub.json truth, pure diff against a guild snapshot",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md",
    "writes": [
     "src/model.ts",
@@ -67,7 +67,7 @@
    "id": "ISS-01M4YRK28WWY8PXJ54M3MNX4M0",
    "kind": "issue",
    "title": "discord api seam + in-memory fake + applier \u2014 idempotent execution",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md",
    "writes": [
     "src/discord.ts",
@@ -81,7 +81,7 @@
    "id": "ISS-01M4YRK2AMTS9NS8QGGV8PZRCV",
    "kind": "issue",
    "title": "onboarding merge \u2014 preserve ids, add/remove options, placeholder prompt id",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md",
    "writes": [
     "src/onboarding.ts",

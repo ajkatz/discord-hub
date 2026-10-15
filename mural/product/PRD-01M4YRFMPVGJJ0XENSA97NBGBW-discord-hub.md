@@ -4,11 +4,11 @@ type: prd
 status: draft
 owner: pm
 title: discord-hub — one server, one sub-community per plugin, spawned by CLI
-version: 2
+version: 3
 open_questions: []
 locales: [all]
 compliance: [gdpr, eaa]
-data: [discord-guild-structure, bot-token-env-only]
+data: [discord-guild-structure, member-forum-posts-sent-to-claude, triage-ledger-jsonl, tokens-env-only]
 ---
 
 > REQ-001 (verbatim, Andrew, 2026-10-14): "I have all these plugins for runescape and
@@ -46,8 +46,9 @@ project, and where creating that sub-community for a new project is trivial.
   pinned invite plus re-pointing the Loadout Lab push-announcer webhook — runbook).
 - Acting on feedback automatically (REQ-003: intake and rationalize only; fixes stay
   human).
-- Slash commands and a gateway-connected bot (triage runs on a schedule, see REQ-003
-  requirements).
+- Slash commands. The bot listens to events only; owner actions stay in the Discord UI
+  (changing a tag is the owner's verdict, REQ-003).
+- Mirroring threads into GitHub issues (cavity in borders.md; not in this PRD).
 - Moderation tooling, roles beyond one per project, voice channels.
 - Multi-guild: one hub config describes one guild.
 - Enabling the Community feature or accepting Discord's community guidelines — a human
@@ -91,6 +92,39 @@ project, and where creating that sub-community for a new project is trivial.
   Discord's error message, and exit non-zero with the operations completed so far
   listed; a re-run SHALL resume from the current guild state.
 
+### Triage (REQ-003, resident bot on pi5 — Andrew's choice 2026-10-14)
+
+- WHEN a member opens a thread in a project's `#bug-reports` or `#feedback`, THE SYSTEM
+  SHALL classify it (kind: bug/feature/question/praise/other; one-line summary;
+  severity; duplicate-of among that project's open triage records), apply the status
+  tag — `acknowledged` for a new report, `known` when it duplicates an open one,
+  `not-an-issue` when it is not a defect (bug-reports only) — plus the kind tag on
+  `#feedback`, reply in the thread with a short acknowledgment that states the
+  rationale, and append one record to the triage ledger (`data/triage.jsonl`). It SHALL
+  never delete, edit, lock or close a member's post. (REQ-003 "intake and rationalize
+  each piece", "mark their status as acknowledged, known, not an issue")
+- WHEN a member posts in a project's `#general` and the classifier judges it a bug
+  report with high confidence, THE SYSTEM SHALL open a thread in that project's
+  `#bug-reports` quoting the message and its author, tag it `acknowledged`, reply under
+  the original message with the thread link, and record it. Low-confidence or non-bug
+  messages produce no action. (REQ-003 "automatically detect ... create threads for
+  issues")
+- WHEN the owner changes a triage tag by hand, THE SYSTEM SHALL record the new status in
+  the ledger and SHALL NOT revert or re-tag that thread. (REQ-003 "does not mean
+  automatically act on each piece")
+- WHEN the classifier fails (API error or refusal), THE SYSTEM SHALL apply no tag, post
+  nothing, log the error with the thread id, and record `unclassified` in the ledger so
+  the owner can find it.
+- WHEN a push lands on a project's default branch, that project's announcer workflow
+  SHALL post the push summary to the project's `#announcements` via its webhook, using
+  the reusable workflow in this repo; `new --repo` SHALL print the caller snippet and
+  the secret names to set. (REQ-003 "report when changes are being published
+  automatically (like in loadout lab)")
+- WHEN deployed, THE SYSTEM SHALL run on pi5 as a systemd service (`Restart=always`,
+  secrets from an env file outside the repo), with `scripts/deploy-pi.sh` and the
+  runbook prepared for Andrew to run himself (pi runbook: no unprompted pushes to his
+  machines).
+
 ## Acceptance
 
 - Given an empty guild snapshot and a `hub.json` with one project When `plan` runs
@@ -109,6 +143,25 @@ project, and where creating that sub-community for a new project is trivial.
   gone, the category name starts with `[archived]`, and no channel or role was deleted.
 - Given no `DISCORD_BOT_TOKEN` When any live command runs Then it exits 2 with a
   one-line message naming the variable.
+- Given a thread in `#bug-reports` whose fake classifier returns bug/new When the bot's
+  decision runs Then tags = [acknowledged], the reply names the summary, and the ledger
+  gains one record with status acknowledged.
+- Given a thread whose classifier returns bug/duplicate-of an open record When decided
+  Then tags = [known] and the reply links the duplicate.
+- Given a thread classified question in `#bug-reports` When decided Then tags =
+  [not-an-issue]; the same classification in `#feedback` yields [question,
+  acknowledged].
+- Given a `#general` message classified bug with high confidence When decided Then a
+  bug thread is requested with the quoted message and tag acknowledged; with low
+  confidence nothing is requested.
+- Given a classifier error When decided Then no tags, no reply, ledger status
+  unclassified.
+- Given a thread tag changed by a human When the update is observed Then the ledger
+  record's status becomes the new tag and no re-tag is issued.
+- Given the reusable announcer workflow When `node --check` and the caller template
+  are validated Then both pass and the template references this repo's workflow.
+- Given `scripts/deploy-pi.sh` When run with DRY_RUN=1 Then it prints the rsync and ssh
+  commands for the target and executes nothing.
 - Given the real guild (ready --live) When `new` runs for a test project Then the
   structures appear in Discord and a second `apply` is a no-op (validates
   ASM-01M4YRFMTAFAVY3TMZ72H5QP92).
@@ -121,4 +174,6 @@ typed routes), the existing Loadout Lab push announcer (`.github/scripts/announc
 unchanged — it only needs a webhook URL). Not found off the shelf: anything that
 reconciles a declared project list against a live guild idempotently; Server Templates
 only clone whole servers once. Build: the hub model, planner, applier, onboarding
-reconciliation, CLI, runbook.
+reconciliation, CLI, runbook, the triage bot (discord.js gateway client + Claude
+classification behind a `Classifier` seam), the reusable announcer workflow (Loadout
+Lab's announce.mjs generalized), and the pi5 systemd deployment.

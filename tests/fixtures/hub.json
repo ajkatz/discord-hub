@@ -1,0 +1,7 @@
+{
+  "guildId": "100000000000000001",
+  "onboardingPrompt": "Which plugins do you use?",
+  "projects": [
+    { "slug": "loadout-lab", "name": "Loadout Lab", "emoji": "🧪", "repo": "ajkatz/runelite-loadout-lab" }
+  ]
+}
