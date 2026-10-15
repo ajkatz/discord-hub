@@ -39,8 +39,8 @@
 - ISS-01M50HBVHAXN1P5TN8HX0BQ8N7 — onboarding PUT carries the seven shared channels as default_channel_ids [done] (mural/issues/ISS-01M50HBVHAXN1P5TN8HX0BQ8N7/spec.md)
 - ISS-01M50HBVK4SF3SD203P4ADTV4D — new --icon — upload the project icon as a server emoji for the pick-list [done] (mural/issues/ISS-01M50HBVK4SF3SD203P4ADTV4D/spec.md)
 - ISS-01M50HBVMWMACX1JZ9WTAPPRF0 — bot reloads hub.json on every channel-map refresh [done] (mural/issues/ISS-01M50HBVMWMACX1JZ9WTAPPRF0/spec.md)
-- ISS-01M50HBVPQQW1P0YNM7AP6ZXZD — announce.yml — quote input descriptions; test parses both workflow files [draft] (mural/issues/ISS-01M50HBVPQQW1P0YNM7AP6ZXZD/spec.md)
-- ISS-01M50HBVRFPJCRQBC5XV8KR7QR — docs — handoff note for provisioning from another machine [draft] (mural/issues/ISS-01M50HBVRFPJCRQBC5XV8KR7QR/spec.md)
+- ISS-01M50HBVPQQW1P0YNM7AP6ZXZD — announce.yml — quote input descriptions; test parses both workflow files [done] (mural/issues/ISS-01M50HBVPQQW1P0YNM7AP6ZXZD/spec.md)
+- ISS-01M50HBVRFPJCRQBC5XV8KR7QR — docs — handoff note for provisioning from another machine [done] (mural/issues/ISS-01M50HBVRFPJCRQBC5XV8KR7QR/spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural/process/playbooks/armament.md)

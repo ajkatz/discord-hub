@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVRFPJCRQBC5XV8KR7QR
 type: issue
-status: draft
+status: done
 owner: eng
 title: docs — handoff note for provisioning from another machine
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [77aecb35cae73873143977f2581377bc3ccf6653]
 shipped_time: 2026-10-15T05:28:58Z
+receipt_sha: a9481df1942a09dc52bf42daa6d1f980c41931ce
+receipt_time: 2026-10-15T19:43:13Z
+receipt_tests: e3b0c44298fc1c14
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 0.0
 ---
 
 ## Contract

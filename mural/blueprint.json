@@ -356,7 +356,7 @@
    "id": "ISS-01M50HBVPQQW1P0YNM7AP6ZXZD",
    "kind": "issue",
    "title": "announce.yml \u2014 quote input descriptions; test parses both workflow files",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M50HBVPQQW1P0YNM7AP6ZXZD/spec.md",
    "writes": [
     ".github/workflows/announce.yml",
@@ -369,7 +369,7 @@
    "id": "ISS-01M50HBVRFPJCRQBC5XV8KR7QR",
    "kind": "issue",
    "title": "docs \u2014 handoff note for provisioning from another machine",
-   "status": "draft",
+   "status": "done",
    "sourceLocation": "mural/issues/ISS-01M50HBVRFPJCRQBC5XV8KR7QR/spec.md",
    "writes": [
     "docs/handoff-wow.md",

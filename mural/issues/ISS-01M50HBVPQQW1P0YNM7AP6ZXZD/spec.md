@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVPQQW1P0YNM7AP6ZXZD
 type: issue
-status: draft
+status: done
 owner: eng
 title: announce.yml — quote input descriptions; test parses both workflow files
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [1c7ce08d6862c5a468c4838426a94c4f1cc0c642, 4330920b774d3d21ba1462a6dba54d877d6dda1a]
 shipped_time: 2026-10-15T18:53:01Z
+receipt_sha: a9481df1942a09dc52bf42daa6d1f980c41931ce
+receipt_time: 2026-10-15T19:43:13Z
+receipt_tests: ecf93feb79e2c968
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 0.7
 ---
 
 ## Contract
