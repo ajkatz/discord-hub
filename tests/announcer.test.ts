@@ -8,6 +8,13 @@ describe('announcer', () => {
     expect(r.status, r.stderr).toBe(0);
   });
 
+  it('both workflow files parse as YAML (an unquoted colon in a description broke every caller once)', () => {
+    for (const f of ['.github/workflows/announce.yml', 'templates/discord-announce.yml']) {
+      const r = spawnSync('python3', ['-c', `import yaml,sys; yaml.safe_load(open(sys.argv[1]))`, f], { encoding: 'utf8' });
+      expect(r.status, `${f}: ${r.stderr}`).toBe(0);
+    }
+  });
+
   it('the reusable workflow is callable and declares both secrets', () => {
     const wf = readFileSync('.github/workflows/announce.yml', 'utf8');
     expect(wf).toMatch(/workflow_call/);

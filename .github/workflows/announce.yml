@@ -7,26 +7,26 @@ on:
   workflow_call:
     inputs:
       project_name:
-        description: Display name for the embed and summary (default: the repo name)
+        description: "Display name for the embed and summary (default: the repo name)"
         type: string
         required: false
         default: ""
       project_description:
-        description: One line about the project, fed to the summarizer
+        description: "One line about the project, fed to the summarizer"
         type: string
         required: false
         default: ""
       hub_ref:
-        description: Ref of ajkatz/discord-hub to take the announcer from
+        description: "Ref of ajkatz/discord-hub to take the announcer from"
         type: string
         required: false
         default: main
     secrets:
       DISCORD_WEBHOOK_URL:
-        description: Channel webhook URL printed by `discord-hub new`
+        description: "Channel webhook URL printed by discord-hub new"
         required: true
       ANTHROPIC_API_KEY:
-        description: Enables AI summaries; without it a plain commit list is posted
+        description: "Enables AI summaries; without it a plain commit list is posted"
         required: false
 
 permissions:
