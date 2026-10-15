@@ -6,7 +6,7 @@
 - ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (mural/decisions/0002-triage-is-a-resident-bot-on-pi5.md)
 
 ## asm
-- ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [unvalidated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
+- ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
 
 ## evergreen
 - DOC-borders — Blueprint — walls and cavities of discord-hub [active] (mural/engineering/borders.md)
