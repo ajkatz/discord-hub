@@ -21,22 +21,22 @@ flowchart TD
         ISS_01M4YRK2AMTS9NS8QGGV8PZRCV["ISS: onboarding merge — preserve ids, add/remove opti<br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph R_triage["triage — 1 done"]
-        ISS_01M4YS4JPD4GTYTH3BC87FY61Q["ISS: triage bot — classify, tag status, acknowledge, <br/>[done]"]:::done
+        ISS_01M4YS4JPD4GTYTH3BC87FY61Q["ISS: triage bot — classify, tag status, acknowledge, <br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph R_classifier["classifier — 1 done"]
-        ISS_01M4YS4JPD4GTYTH3BC87FY61Q["ISS: triage bot — classify, tag status, acknowledge, <br/>[done]"]:::done
+        ISS_01M4YS4JPD4GTYTH3BC87FY61Q["ISS: triage bot — classify, tag status, acknowledge, <br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph R_bot["bot — 1 done"]
-        ISS_01M4YS4JPD4GTYTH3BC87FY61Q["ISS: triage bot — classify, tag status, acknowledge, <br/>[done]"]:::done
+        ISS_01M4YS4JPD4GTYTH3BC87FY61Q["ISS: triage bot — classify, tag status, acknowledge, <br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph R_announcer["announcer — 1 done"]
-        ISS_01M4YS4JR84N865A2GE202351A["ISS: announcer — reusable push-summary workflow + cal<br/>[done]"]:::done
+        ISS_01M4YS4JR84N865A2GE202351A["ISS: announcer — reusable push-summary workflow + cal<br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph R_deploy["deploy — 1 done"]
-        ISS_01M4YS4JT1NBYWK02Q0X4XHT4G["ISS: pi deploy — systemd unit, rsync deploy script (D<br/>[done]"]:::done
+        ISS_01M4YS4JT1NBYWK02Q0X4XHT4G["ISS: pi deploy — systemd unit, rsync deploy script (D<br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph R_cli["cli — 1 done"]
-        ISS_01M4YRK2CD4S2WNDHCEFJPFZVH["ISS: cli + runbook + readme — init, new, plan, apply,<br/>[done]"]:::done
+        ISS_01M4YRK2CD4S2WNDHCEFJPFZVH["ISS: cli + runbook + readme — init, new, plan, apply,<br/>[done] ⚠ PIN-STALE"]:::pinstale
     end
     subgraph WING["product & design wing"]
         F_01M4YSPEQSEHZREY1K1006BK1A["F: done actuals miss untracked directories — actual<br/>[active]"]:::active
