@@ -50,10 +50,11 @@ export function decide(input: ClassifyInput, result: Classification | Error, opt
         record: record(input, c, 'acknowledged', opts),
       };
     }
-    const where = c.kind === 'feature' ? 'This reads as a feature request rather than a defect, so #feedback is the better home for it. ' : 'This does not read as a defect, so I have marked it not an issue. ';
+    const feedback = input.siblings?.feedback ? `<#${input.siblings.feedback}>` : '#feedback';
+    const reply = c.kind === 'feature' ? `${c.rationale} ${feedback} is the better home for it.` : `${c.rationale} Marked not an issue.`;
     return {
       tags: ['not-an-issue'],
-      reply: `${where}${c.rationale}`.trim(),
+      reply: reply.trim(),
       createBugThread: null,
       record: record(input, c, 'not-an-issue', opts),
     };

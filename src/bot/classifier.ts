@@ -20,7 +20,7 @@ Rules:
 - severity: only for bugs (high = crash, data loss, unusable; medium = wrong result; low = cosmetic); null otherwise.
 - confidence: how sure you are of the kind. Use high only when the post plainly describes it.
 - duplicateOf: if an open record in the list describes the same defect, its threadId; otherwise null. Never guess an id that is not in the list.
-- rationale: one plain sentence addressed to the member, no exclamation marks, no promises about fixes.`;
+- rationale: one short sentence (at most 25 words) addressed to the member, stating why: no exclamation marks, no promises about fixes, and do not restate the kind label itself (the reply around it already does).`;
 
 export class ClaudeClassifier implements Classifier {
   private readonly client: Anthropic;

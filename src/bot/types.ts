@@ -26,6 +26,8 @@ export interface ClassifyInput {
   body: string;
   author: { id: string; name: string };
   openRecords: TriageRecord[];
+  /** Sibling channel ids for the same project, so replies can link them. */
+  siblings?: { feedback?: string; bugReports?: string };
 }
 
 export interface Classifier {

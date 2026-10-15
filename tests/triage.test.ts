@@ -50,7 +50,19 @@ describe('decide for a #bug-reports thread', () => {
   it('points a feature request at #feedback and marks it not an issue', () => {
     const d = decide(input('bug-reports'), cls({ kind: 'feature' }), OPTS);
     expect(d.tags).toEqual(['not-an-issue']);
-    expect(d.reply).toMatch(/feedback/);
+    expect(d.reply).toMatch(/#feedback is the better home/);
+    expect(d.reply!.startsWith(cls().rationale)).toBe(true);
+  });
+
+  it('links the real #feedback channel when the sibling id is known', () => {
+    const d = decide(input('bug-reports', { siblings: { feedback: '777' } }), cls({ kind: 'feature' }), OPTS);
+    expect(d.reply).toContain('<#777> is the better home');
+  });
+
+  it('does not repeat the rationale', () => {
+    const d = decide(input('bug-reports'), cls({ kind: 'question' }), OPTS);
+    expect(d.reply!.split(cls().rationale).length - 1).toBe(1);
+    expect(d.reply).toMatch(/Marked not an issue\.$/);
   });
 });
 

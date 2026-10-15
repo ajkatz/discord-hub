@@ -41,10 +41,12 @@ async function classify(input: ClassifyInput): Promise<Classification | Error> {
   }
 }
 
-function bugReportsChannelId(slug: string): string | undefined {
-  for (const [id, m] of channels) if (m.slug === slug && m.kind === 'bug-reports') return id;
+function channelIdFor(slug: string, kind: MappedChannel['kind']): string | undefined {
+  for (const [id, m] of channels) if (m.slug === slug && m.kind === kind) return id;
   return undefined;
 }
+const bugReportsChannelId = (slug: string) => channelIdFor(slug, 'bug-reports');
+const siblingsFor = (slug: string) => ({ feedback: channelIdFor(slug, 'feedback'), bugReports: channelIdFor(slug, 'bug-reports') });
 
 async function setTags(thread: AnyThreadChannel, names: string[]): Promise<void> {
   const parent = thread.parent;
@@ -75,6 +77,7 @@ async function onThreadCreate(thread: AnyThreadChannel, newlyCreated: boolean): 
     body: starter?.content ?? '',
     author: { id: starter?.author.id ?? thread.ownerId ?? '', name: starter?.author.username ?? 'unknown' },
     openRecords: ledger.open(entry.slug),
+    siblings: siblingsFor(entry.slug),
   };
   const d = decide(input, await classify(input), { now: now(), model: classifier.model });
   await setTags(thread, d.tags);
@@ -97,6 +100,7 @@ async function onMessage(message: Message): Promise<void> {
     body: message.content,
     author: { id: message.author.id, name: message.author.username },
     openRecords: ledger.open(entry.slug),
+    siblings: siblingsFor(entry.slug),
   };
   const d = decide(input, await classify(input), { now: now(), model: classifier.model });
   if (!d.createBugThread) {
