@@ -25,3 +25,15 @@
 {"ts": "2026-10-15T03:28:35Z", "event": "done", "id": "ISS-01M4YS4JPD4GTYTH3BC87FY61Q", "receipt_sha": "1e8b554a19636b5ce2c760981fe85f3f4a908cfe", "receipt_tests": "deb5a77825a9af38", "predicted_files": 9, "actual_files": 1, "predicted_tokens": 14000, "actual_tokens": null, "wall_s": 0.7}
 {"ts": "2026-10-15T03:28:35Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}
 {"ts": "2026-10-15T19:34:01Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}
+{"ts": "2026-10-15T19:42:31Z", "event": "gate-ready", "id": "ISS-01M50HBV6NCCMT1TCCCYEGD1EY", "result": "pass", "live": false}
+{"ts": "2026-10-15T19:42:33Z", "event": "done", "id": "ISS-01M50HBV6NCCMT1TCCCYEGD1EY", "receipt_sha": "01009a7d6540e0439e830d6deba89950ecbd178a", "receipt_tests": "bae0080e1c75abe6", "predicted_files": 5, "actual_files": -1, "predicted_tokens": 4000, "actual_tokens": null, "wall_s": 1.3}
+{"ts": "2026-10-15T19:42:33Z", "event": "gate-ready", "id": "ISS-01M50HBV8MWYWE7AYH7NG7W7AX", "result": "pass", "live": false}
+{"ts": "2026-10-15T19:42:37Z", "event": "done", "id": "ISS-01M50HBV8MWYWE7AYH7NG7W7AX", "receipt_sha": "01009a7d6540e0439e830d6deba89950ecbd178a", "receipt_tests": "63a2e03825ed0355", "predicted_files": 3, "actual_files": -1, "predicted_tokens": 2000, "actual_tokens": null, "wall_s": 3.7}
+{"ts": "2026-10-15T19:42:37Z", "event": "gate-ready", "id": "ISS-01M50HBVACSZN74PWSES9DYY05", "result": "pass", "live": false}
+{"ts": "2026-10-15T19:42:38Z", "event": "done", "id": "ISS-01M50HBVACSZN74PWSES9DYY05", "receipt_sha": "01009a7d6540e0439e830d6deba89950ecbd178a", "receipt_tests": "1ca0c7ecde9232ec", "predicted_files": 8, "actual_files": -1, "predicted_tokens": 4000, "actual_tokens": null, "wall_s": 1.4}
+{"ts": "2026-10-15T19:42:38Z", "event": "gate-ready", "id": "ISS-01M50HBVFMAQKAMG2HEBC3AGP7", "result": "pass", "live": false}
+{"ts": "2026-10-15T19:42:40Z", "event": "done", "id": "ISS-01M50HBVFMAQKAMG2HEBC3AGP7", "receipt_sha": "01009a7d6540e0439e830d6deba89950ecbd178a", "receipt_tests": "2c1a030dc87e6e32", "predicted_files": 10, "actual_files": -1, "predicted_tokens": 4000, "actual_tokens": null, "wall_s": 1.4}
+{"ts": "2026-10-15T19:42:40Z", "event": "gate-ready", "id": "ISS-01M50HBVHAXN1P5TN8HX0BQ8N7", "result": "pass", "live": false}
+{"ts": "2026-10-15T19:42:41Z", "event": "done", "id": "ISS-01M50HBVHAXN1P5TN8HX0BQ8N7", "receipt_sha": "01009a7d6540e0439e830d6deba89950ecbd178a", "receipt_tests": "3b93b4fc3ec39b7f", "predicted_files": 4, "actual_files": -1, "predicted_tokens": 2500, "actual_tokens": null, "wall_s": 0.8}
+{"ts": "2026-10-15T19:42:41Z", "event": "gate-ready", "id": "ISS-01M50HBVK4SF3SD203P4ADTV4D", "result": "pass", "live": false}
+{"ts": "2026-10-15T19:42:44Z", "event": "done", "id": "ISS-01M50HBVK4SF3SD203P4ADTV4D", "receipt_sha": "01009a7d6540e0439e830d6deba89950ecbd178a", "receipt_tests": "0affa5688bdc0fc9", "predicted_files": 7, "actual_files": -1, "predicted_tokens": 5000, "actual_tokens": null, "wall_s": 3.6}

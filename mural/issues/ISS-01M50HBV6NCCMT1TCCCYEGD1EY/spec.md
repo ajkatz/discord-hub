@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBV6NCCMT1TCCCYEGD1EY
 type: issue
-status: draft
+status: done
 owner: eng
 title: bot self-overwrite — apply grants the bot a member overwrite on every category and child
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [6bcb56b2f832312cce1b2746927f00c4c901a65b]
 shipped_time: 2026-10-15T04:07:54Z
+receipt_sha: 01009a7d6540e0439e830d6deba89950ecbd178a
+receipt_time: 2026-10-15T19:42:33Z
+receipt_tests: bae0080e1c75abe6
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 1.3
 ---
 
 ## Contract

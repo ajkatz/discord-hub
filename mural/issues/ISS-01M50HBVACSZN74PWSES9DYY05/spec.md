@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVACSZN74PWSES9DYY05
 type: issue
-status: draft
+status: done
 owner: eng
 title: forum guidelines + announcements topic — set-topic op reconciles existing channels
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [0915a50cf0b0c1b24481e7489a51e5cd24fe33ae]
 shipped_time: 2026-10-15T04:24:07Z
+receipt_sha: 01009a7d6540e0439e830d6deba89950ecbd178a
+receipt_time: 2026-10-15T19:42:38Z
+receipt_tests: 1ca0c7ecde9232ec
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 1.4
 ---
 
 ## Contract

@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVFMAQKAMG2HEBC3AGP7
 type: issue
-status: draft
+status: done
 owner: eng
 title: onboarding options carry a custom emoji id — hub.json emojiId, emoji_id in the PUT
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [6dda599645f5152d1ef4cef660ec6a36264d3a70, 2fb61b45d248925fcc1184117b94967c97bc06b6]
 shipped_time: 2026-10-15T04:47:04Z
+receipt_sha: 01009a7d6540e0439e830d6deba89950ecbd178a
+receipt_time: 2026-10-15T19:42:40Z
+receipt_tests: 2c1a030dc87e6e32
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 1.4
 ---
 
 ## Contract

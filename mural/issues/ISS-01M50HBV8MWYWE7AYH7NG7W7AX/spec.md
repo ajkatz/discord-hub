@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBV8MWYWE7AYH7NG7W7AX
 type: issue
-status: draft
+status: done
 owner: eng
 title: cli --no-onboarding — plan/apply/new/init leave the onboarding prompt alone
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [6bcb56b2f832312cce1b2746927f00c4c901a65b]
 shipped_time: 2026-10-15T04:07:54Z
+receipt_sha: 01009a7d6540e0439e830d6deba89950ecbd178a
+receipt_time: 2026-10-15T19:42:37Z
+receipt_tests: 63a2e03825ed0355
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 3.7
 ---
 
 ## Contract

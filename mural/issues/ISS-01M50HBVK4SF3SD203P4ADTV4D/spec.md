@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVK4SF3SD203P4ADTV4D
 type: issue
-status: draft
+status: done
 owner: eng
 title: new --icon — upload the project icon as a server emoji for the pick-list
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [77aecb35cae73873143977f2581377bc3ccf6653]
 shipped_time: 2026-10-15T05:28:58Z
+receipt_sha: 01009a7d6540e0439e830d6deba89950ecbd178a
+receipt_time: 2026-10-15T19:42:44Z
+receipt_tests: 0affa5688bdc0fc9
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 3.6
 ---
 
 ## Contract

@@ -83,6 +83,14 @@
  ],
  "nodes": [
   {
+   "id": "CO-01M50HBW4FGVWW46SFDG3SGP1B",
+   "kind": "co",
+   "title": "PRD v3 -> v4 \u2014 reconcile the requirements with what shipped on 2026-10-14/15",
+   "status": "active",
+   "sourceLocation": "mural/changes/CO-01M50HBW4FGVWW46SFDG3SGP1B-prd-v4-reconciliation.md",
+   "writes": []
+  },
+  {
    "id": "F-01M4YSPEQSEHZREY1K1006BK1A",
    "kind": "finding",
    "title": "done actuals miss untracked directories \u2014 actual_files 0 on a 15-file greenfield issue",
@@ -197,6 +205,178 @@
    ]
   },
   {
+   "id": "ISS-01M50HBV6NCCMT1TCCCYEGD1EY",
+   "kind": "issue",
+   "title": "bot self-overwrite \u2014 apply grants the bot a member overwrite on every category and child",
+   "status": "done",
+   "sourceLocation": "mural/issues/ISS-01M50HBV6NCCMT1TCCCYEGD1EY/spec.md",
+   "writes": [
+    "src/apply.ts",
+    "src/discord.ts",
+    "src/fake.ts",
+    "src/model.ts",
+    "tests/apply.test.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBV8MWYWE7AYH7NG7W7AX",
+   "kind": "issue",
+   "title": "cli --no-onboarding \u2014 plan/apply/new/init leave the onboarding prompt alone",
+   "status": "done",
+   "sourceLocation": "mural/issues/ISS-01M50HBV8MWYWE7AYH7NG7W7AX/spec.md",
+   "writes": [
+    "src/cli.ts",
+    "tests/cli.test.ts",
+    "README.md"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVACSZN74PWSES9DYY05",
+   "kind": "issue",
+   "title": "forum guidelines + announcements topic \u2014 set-topic op reconciles existing channels",
+   "status": "done",
+   "sourceLocation": "mural/issues/ISS-01M50HBVACSZN74PWSES9DYY05/spec.md",
+   "writes": [
+    "src/apply.ts",
+    "src/discord.ts",
+    "src/fake.ts",
+    "src/model.ts",
+    "src/plan.ts",
+    "tests/apply.test.ts",
+    "tests/helpers.ts",
+    "tests/plan.test.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVC51E683DF67K2RD058",
+   "kind": "issue",
+   "title": "silent triage \u2014 tags are the answer; kind tags; set-tags op adds missing forum tags",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M50HBVC51E683DF67K2RD058/spec.md",
+   "writes": [
+    "src/apply.ts",
+    "src/bot/classifier.ts",
+    "src/bot/index.ts",
+    "src/bot/triage.ts",
+    "src/bot/types.ts",
+    "src/discord.ts",
+    "src/fake.ts",
+    "src/model.ts",
+    "src/plan.ts",
+    "README.md",
+    "tests/apply.test.ts",
+    "tests/model.test.ts",
+    "tests/plan.test.ts",
+    "tests/triage.test.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVDXP28V5RR9AB9XYWRV",
+   "kind": "issue",
+   "title": "one #feedback forum per project \u2014 kind + status tags; #bug-reports removed",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M50HBVDXP28V5RR9AB9XYWRV/spec.md",
+   "writes": [
+    "README.md",
+    "docs/runbook.md",
+    "mural/manual/index.md",
+    "src/bot/channels.ts",
+    "src/bot/classifier.ts",
+    "src/bot/index.ts",
+    "src/bot/triage.ts",
+    "src/bot/types.ts",
+    "src/model.ts",
+    "tests/apply.test.ts",
+    "tests/channels.test.ts",
+    "tests/cli.test.ts",
+    "tests/model.test.ts",
+    "tests/plan.test.ts",
+    "tests/triage.test.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVFMAQKAMG2HEBC3AGP7",
+   "kind": "issue",
+   "title": "onboarding options carry a custom emoji id \u2014 hub.json emojiId, emoji_id in the PUT",
+   "status": "done",
+   "sourceLocation": "mural/issues/ISS-01M50HBVFMAQKAMG2HEBC3AGP7/spec.md",
+   "writes": [
+    "hub.json",
+    "README.md",
+    "src/apply.ts",
+    "src/discord.ts",
+    "src/model.ts",
+    "src/onboarding.ts",
+    "src/plan.ts",
+    "tests/helpers.ts",
+    "tests/onboarding.test.ts",
+    "tests/plan.test.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVHAXN1P5TN8HX0BQ8N7",
+   "kind": "issue",
+   "title": "onboarding PUT carries the seven shared channels as default_channel_ids",
+   "status": "done",
+   "sourceLocation": "mural/issues/ISS-01M50HBVHAXN1P5TN8HX0BQ8N7/spec.md",
+   "writes": [
+    "src/apply.ts",
+    "src/discord.ts",
+    "src/fake.ts",
+    "tests/apply.test.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVK4SF3SD203P4ADTV4D",
+   "kind": "issue",
+   "title": "new --icon \u2014 upload the project icon as a server emoji for the pick-list",
+   "status": "done",
+   "sourceLocation": "mural/issues/ISS-01M50HBVK4SF3SD203P4ADTV4D/spec.md",
+   "writes": [
+    "README.md",
+    "src/cli.ts",
+    "src/discord.ts",
+    "src/fake.ts",
+    "tests/apply.test.ts",
+    "tests/cli.test.ts",
+    "tests/fixtures/icon.png"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVMWMACX1JZ9WTAPPRF0",
+   "kind": "issue",
+   "title": "bot reloads hub.json on every channel-map refresh",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M50HBVMWMACX1JZ9WTAPPRF0/spec.md",
+   "writes": [
+    "src/bot/index.ts"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVPQQW1P0YNM7AP6ZXZD",
+   "kind": "issue",
+   "title": "announce.yml \u2014 quote input descriptions; test parses both workflow files",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M50HBVPQQW1P0YNM7AP6ZXZD/spec.md",
+   "writes": [
+    ".github/workflows/announce.yml",
+    "tests/announcer.test.ts",
+    "package.json",
+    "package-lock.json"
+   ]
+  },
+  {
+   "id": "ISS-01M50HBVRFPJCRQBC5XV8KR7QR",
+   "kind": "issue",
+   "title": "docs \u2014 handoff note for provisioning from another machine",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M50HBVRFPJCRQBC5XV8KR7QR/spec.md",
+   "writes": [
+    "docs/handoff-wow.md",
+    "README.md"
+   ]
+  },
+  {
    "id": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
    "kind": "prd",
    "title": "discord-hub \u2014 one server, one sub-community per plugin, spawned by CLI",
@@ -239,6 +419,61 @@
   {
    "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
    "to": "ISS-01M4YS4JT1NBYWK02Q0X4XHT4G",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBV6NCCMT1TCCCYEGD1EY",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBV8MWYWE7AYH7NG7W7AX",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVACSZN74PWSES9DYY05",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVC51E683DF67K2RD058",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVDXP28V5RR9AB9XYWRV",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVFMAQKAMG2HEBC3AGP7",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVHAXN1P5TN8HX0BQ8N7",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVK4SF3SD203P4ADTV4D",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVMWMACX1JZ9WTAPPRF0",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVPQQW1P0YNM7AP6ZXZD",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M50HBVRFPJCRQBC5XV8KR7QR",
    "type": "derives"
   }
  ]

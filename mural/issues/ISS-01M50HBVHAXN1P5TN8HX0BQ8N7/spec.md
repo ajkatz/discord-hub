@@ -1,7 +1,7 @@
 ---
 id: ISS-01M50HBVHAXN1P5TN8HX0BQ8N7
 type: issue
-status: draft
+status: done
 owner: eng
 title: onboarding PUT carries the seven shared channels as default_channel_ids
 version: 1
@@ -18,6 +18,12 @@ max_turns: 25
 method: retroactive
 shipped_sha: [5ba07d329b287ef38da8ef11426aceb6c1380f5b]
 shipped_time: 2026-10-15T05:26:07Z
+receipt_sha: 01009a7d6540e0439e830d6deba89950ecbd178a
+receipt_time: 2026-10-15T19:42:41Z
+receipt_tests: 3b93b4fc3ec39b7f
+actual_files: -1
+actual_files_total: -1
+actual_wall_s: 0.8
 ---
 
 ## Contract
