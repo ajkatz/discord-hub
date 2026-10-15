@@ -20,7 +20,7 @@ jobs:
     with:
       project_name: "Loadout Lab"
       project_description: "Loadout Lab is a RuneLite (Old School RuneScape) plugin that finds the best-in-slot gear a player already owns."
-    # Named, not `secrets: inherit`: inherit does not cross from an org-owned repo to a
+    # Named on purpose: inheriting secrets does not cross from an org-owned repo to a
     # user-owned reusable workflow (Loadout Lab failed with "required, but not provided").
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

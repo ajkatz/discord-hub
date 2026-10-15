@@ -4,6 +4,12 @@ import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 
 describe('announcer', () => {
+  it('announce.mjs skips a push that only touches .github/', () => {
+    const src = readFileSync('announcer/announce.mjs', 'utf8');
+    expect(src).toMatch(/SILENT_PREFIXES = \[\".github\/\"\]/);
+    expect(src.indexOf('SILENT_PREFIXES')).toBeLessThan(src.indexOf('async function claudeSummary'));
+  });
+
   it('announce.mjs parses', () => {
     const r = spawnSync('node', ['--check', 'announcer/announce.mjs'], { encoding: 'utf8' });
     expect(r.status, r.stderr).toBe(0);

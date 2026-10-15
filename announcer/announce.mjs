@@ -64,6 +64,13 @@ for (const c of commits) {
   }
 }
 const featuresChanged = changedFiles.has(FEATURES_PATH);
+
+// Housekeeping pushes (workflows, CI scripts) are not news for players.
+const SILENT_PREFIXES = [".github/"];
+if (changedFiles.size > 0 && [...changedFiles].every((f) => SILENT_PREFIXES.some((p) => f.startsWith(p)))) {
+  log("Push only touched CI/automation files — nothing for players. Exiting cleanly.");
+  process.exit(0);
+}
 const hasFeatCommit = commits.some((c) => /^feat(\(|:|!)/i.test(c.message ?? ""));
 
 // ---------------------------------------------------------------------------
