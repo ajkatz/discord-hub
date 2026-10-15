@@ -23,7 +23,7 @@ export class FakeDiscordApi implements DiscordApi {
 
   constructor(seed: GuildSnapshot) {
     this.roles = seed.roles.map((r) => ({ ...r }));
-    this.channels = seed.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined }));
+    this.channels = seed.channels.map((c) => ({ ...c, tags: c.tags ? [...c.tags] : undefined, topic: c.topic ?? null }));
     this.webhooks = seed.webhooks.map((w) => ({ ...w, token: 'seeded-token' }));
     this.onboarding = clonePrompts(seed.onboarding);
     if (!this.roles.some((r) => r.id === seed.guildId)) this.roles.unshift({ id: seed.guildId, name: '@everyone' });
@@ -73,17 +73,19 @@ export class FakeDiscordApi implements DiscordApi {
       type: body.type,
       parentId: body.parent_id ?? null,
       tags: body.available_tags ? body.available_tags.map((t) => t.name) : undefined,
+      topic: body.topic ?? null,
     };
     this.channels.push(ch);
     this.overwritesById.set(ch.id, (body.permission_overwrites ?? []).map((o) => ({ ...o })));
     return { id: ch.id };
   }
 
-  async modifyChannel(channelId: string, body: { name?: string }): Promise<void> {
+  async modifyChannel(channelId: string, body: { name?: string; topic?: string }): Promise<void> {
     this.guard('modifyChannel');
     const ch = this.channels.find((c) => c.id === channelId);
     if (!ch) throw new Error(`fake: unknown channel ${channelId}`);
     if (body.name !== undefined) ch.name = body.name;
+    if (body.topic !== undefined) ch.topic = body.topic;
   }
 
   async createWebhook(channelId: string, name: string): Promise<{ id: string; token: string }> {

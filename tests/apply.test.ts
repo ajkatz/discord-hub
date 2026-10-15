@@ -62,6 +62,14 @@ describe('apply against an empty fake guild', () => {
     }
   });
 
+  it('writes the guidelines as the forum topic', async () => {
+    const { api } = await provision();
+    const snap = await api.snapshot(GUILD);
+    expect(snap.channels.find((c) => c.name === 'bug-reports')!.topic).toMatch(/One bug per post/);
+    expect(snap.channels.find((c) => c.name === 'feedback')!.topic).toMatch(/bug-reports/);
+    expect(snap.channels.find((c) => c.name === 'general')!.topic ?? '').toBe('');
+  });
+
   it('returns the webhook url once and never persists it', async () => {
     const { api, result } = await provision();
     expect(result.webhooks).toHaveLength(1);

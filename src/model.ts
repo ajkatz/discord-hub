@@ -25,6 +25,8 @@ export interface DesiredChannel {
   roleCanPost: boolean;
   /** Forum tags; empty for text channels. */
   tags: string[];
+  /** Channel topic; on a forum this is the post guidelines members read before posting. */
+  topic: string;
 }
 
 export interface DesiredProject {
@@ -46,6 +48,9 @@ export const FEEDBACK_TAGS = ['idea', 'question', 'praise', 'acknowledged', 'pla
 export const SHARED_CHANNELS = ['welcome', 'rules', 'all-announcements', 'lounge', 'introductions', 'help', 'off-topic'] as const;
 export const READ_ONLY_SHARED: string[] = ['rules', 'all-announcements'];
 
+export const BUG_GUIDELINES = 'One bug per post. Include: what you did, what happened, what you expected, plugin version, and a screenshot if you have one. I read everything; the tag shows where it stands.';
+export const FEEDBACK_GUIDELINES = 'Ideas, questions and thanks go here. One topic per post. Bugs belong in #bug-reports.';
+export const ANNOUNCEMENTS_TOPIC = 'Release notes and development updates. Posted automatically on every push.';
 export const WEBHOOK_NAME = 'Push announcer';
 export const ARCHIVED_PREFIX = '[archived] ';
 export const SLUG_RE = /^[a-z0-9-]+$/;
@@ -61,10 +66,10 @@ export function desiredFor(p: ProjectConfig): DesiredProject {
     roleName: p.slug,
     categoryName: archived ? ARCHIVED_PREFIX + p.name : p.name,
     channels: [
-      { name: 'announcements', kind: 'text', roleCanPost: false, tags: [] },
-      { name: 'general', kind: 'text', roleCanPost: true, tags: [] },
-      { name: 'bug-reports', kind: 'forum', roleCanPost: true, tags: [...BUG_TAGS] },
-      { name: 'feedback', kind: 'forum', roleCanPost: true, tags: [...FEEDBACK_TAGS] },
+      { name: 'announcements', kind: 'text', roleCanPost: false, tags: [], topic: ANNOUNCEMENTS_TOPIC },
+      { name: 'general', kind: 'text', roleCanPost: true, tags: [], topic: '' },
+      { name: 'bug-reports', kind: 'forum', roleCanPost: true, tags: [...BUG_TAGS], topic: BUG_GUIDELINES },
+      { name: 'feedback', kind: 'forum', roleCanPost: true, tags: [...FEEDBACK_TAGS], topic: FEEDBACK_GUIDELINES },
     ],
   };
 }
@@ -123,6 +128,8 @@ export interface SnapChannel {
   parentId: string | null;
   /** Forum tag names, when a forum. */
   tags?: string[];
+  /** Channel topic / forum guidelines, when known. */
+  topic?: string | null;
 }
 export interface SnapWebhook { id: string; channelId: string; name: string }
 export interface SnapOption {

@@ -25,7 +25,8 @@ export interface PlannedOption {
 export type Op =
   | { kind: 'create-role'; name: string; mentionable: boolean }
   | { kind: 'create-category'; name: string; role: string }
-  | { kind: 'create-channel'; name: string; type: ChannelKind; category: string; role: string; roleCanPost: boolean; tags: string[] }
+  | { kind: 'create-channel'; name: string; type: ChannelKind; category: string; role: string; roleCanPost: boolean; tags: string[]; topic: string }
+  | { kind: 'set-topic'; channelId: string; channel: string; category: string; topic: string }
   | { kind: 'rename-channel'; channelId: string; name: string }
   | { kind: 'create-webhook'; category: string; channel: string; name: string }
   | { kind: 'create-shared-channel'; name: string; everyoneCanPost: boolean }
@@ -62,6 +63,7 @@ export function plan(hub: Hub, snap: GuildSnapshot, opts: PlanOptions = {}): Op[
   const categories: Op[] = [];
   const channels: Op[] = [];
   const renames: Op[] = [];
+  const topics: Op[] = [];
   const webhooks: Op[] = [];
   const shared: Op[] = [];
   const desiredOptions: PlannedOption[] = [];
@@ -83,7 +85,9 @@ export function plan(hub: Hub, snap: GuildSnapshot, opts: PlanOptions = {}): Op[
     for (const ch of d.channels) {
       const existing = cat ? findChild(snap, cat.id, ch.name) : undefined;
       if (!existing) {
-        channels.push({ kind: 'create-channel', name: ch.name, type: ch.kind, category: d.categoryName, role: d.roleName, roleCanPost: ch.roleCanPost, tags: [...ch.tags] });
+        channels.push({ kind: 'create-channel', name: ch.name, type: ch.kind, category: d.categoryName, role: d.roleName, roleCanPost: ch.roleCanPost, tags: [...ch.tags], topic: ch.topic });
+      } else if (ch.topic && existing.topic !== undefined && (existing.topic ?? '') !== ch.topic) {
+        topics.push({ kind: 'set-topic', channelId: existing.id, channel: ch.name, category: d.categoryName, topic: ch.topic });
       }
     }
     const ann = cat ? findChild(snap, cat.id, 'announcements') : undefined;
@@ -123,7 +127,7 @@ export function plan(hub: Hub, snap: GuildSnapshot, opts: PlanOptions = {}): Op[
     }
   }
 
-  const ops = [...roles, ...categories, ...channels, ...renames, ...webhooks, ...shared];
+  const ops = [...roles, ...categories, ...channels, ...renames, ...topics, ...webhooks, ...shared];
   if (onboardingDirty) ops.push({ kind: 'upsert-onboarding', promptTitle: hub.onboardingPrompt, options: desiredOptions });
   return ops;
 }
@@ -134,6 +138,7 @@ export function describeOp(op: Op): string {
     case 'create-category': return `create private category "${op.name}" for @${op.role}`;
     case 'create-channel': return `create ${op.type} #${op.name} in "${op.category}"${op.tags.length ? ` tags=[${op.tags.join(', ')}]` : ''}`;
     case 'rename-channel': return `rename channel ${op.channelId} -> "${op.name}"`;
+    case 'set-topic': return `set guidelines on "${op.category}" #${op.channel}`;
     case 'create-webhook': return `create webhook "${op.name}" in "${op.category}" #${op.channel}`;
     case 'create-shared-channel': return `create shared #${op.name}${op.everyoneCanPost ? '' : ' (read-only)'}`;
     case 'upsert-onboarding': return `update onboarding prompt "${op.promptTitle}" -> [${op.options.map((o) => o.title).join(', ')}]`;

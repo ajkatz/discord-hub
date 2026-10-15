@@ -92,6 +92,27 @@ describe('plan against a partial guild', () => {
   });
 });
 
+describe('plan guidelines', () => {
+  it('sets guidelines on an existing forum that has none, and nothing when they match', () => {
+    const hub = hubWith(LL);
+    const snap = fullSnapshot(hub);
+    const bugs = snap.channels.find((c) => c.name === 'bug-reports')!;
+    bugs.topic = null;
+    const ops = plan(hub, snap);
+    expect(ops.map((o) => o.kind)).toEqual(['set-topic']);
+    expect(ops[0]).toMatchObject({ channelId: bugs.id, channel: 'bug-reports' });
+    bugs.topic = desiredFor(LL).channels[2].topic;
+    expect(plan(hub, snap)).toEqual([]);
+  });
+
+  it('leaves a channel alone when the snapshot does not report topics', () => {
+    const hub = hubWith(LL);
+    const snap = fullSnapshot(hub);
+    for (const c of snap.channels) delete c.topic;
+    expect(plan(hub, snap)).toEqual([]);
+  });
+});
+
 describe('plan against a matching guild', () => {
   it('is empty', () => {
     const hub = hubWith(LL, { slug: 'goal-planner', name: 'Goal Planner' });

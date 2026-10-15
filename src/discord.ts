@@ -43,7 +43,7 @@ export interface DiscordApi {
   snapshot(guildId: string): Promise<GuildSnapshot>;
   createRole(guildId: string, body: { name: string; mentionable: boolean }): Promise<{ id: string }>;
   createChannel(guildId: string, body: CreateChannelBody): Promise<{ id: string }>;
-  modifyChannel(channelId: string, body: { name?: string }): Promise<void>;
+  modifyChannel(channelId: string, body: { name?: string; topic?: string }): Promise<void>;
   createWebhook(channelId: string, name: string): Promise<{ id: string; token: string }>;
   getOnboarding(guildId: string): Promise<SnapOnboarding>;
   putOnboarding(guildId: string, body: { prompts: PutPrompt[] }): Promise<void>;
@@ -103,6 +103,7 @@ export class RestDiscordApi implements DiscordApi {
           type: c.type,
           parentId,
           tags: Array.isArray(forum.available_tags) ? forum.available_tags.map((t) => t.name) : undefined,
+          topic: 'topic' in c ? (c.topic ?? null) : null,
         };
       }),
       webhooks: webhooks.filter((w) => w.channel_id).map((w) => ({ id: w.id, channelId: w.channel_id as string, name: w.name ?? '' })),
@@ -120,7 +121,7 @@ export class RestDiscordApi implements DiscordApi {
     return { id: c.id };
   }
 
-  async modifyChannel(channelId: string, body: { name?: string }): Promise<void> {
+  async modifyChannel(channelId: string, body: { name?: string; topic?: string }): Promise<void> {
     await this.rest.patch(Routes.channel(channelId), { body });
   }
 

@@ -116,6 +116,7 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
             type: op.type === 'forum' ? FORUM : TEXT,
             parent_id: parentId,
             permission_overwrites: childOverwrites(everyoneId, roleId, op.roleCanPost, snapshot.botId),
+            ...(op.topic ? { topic: op.topic } : {}),
             ...(op.type === 'forum' ? { available_tags: op.tags.map((name) => ({ name })) } : {}),
           });
           res.addChild(parentId, op.name, id);
@@ -123,6 +124,10 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
         }
         case 'rename-channel': {
           await api.modifyChannel(op.channelId, { name: op.name });
+          break;
+        }
+        case 'set-topic': {
+          await api.modifyChannel(op.channelId, { topic: op.topic });
           break;
         }
         case 'create-webhook': {

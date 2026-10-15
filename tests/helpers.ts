@@ -37,6 +37,7 @@ export function fullSnapshot(hub: Hub): GuildSnapshot {
         type: c.kind === 'forum' ? 15 : 0,
         parentId: cat.id,
         tags: c.kind === 'forum' ? [...c.tags] : undefined,
+        topic: c.topic,
       };
       snap.channels.push(ch);
       childIds.push(ch.id);
