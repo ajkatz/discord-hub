@@ -48,7 +48,8 @@ Creates the role, private category, `#announcements` (read-only), `#general`, `#
 (one forum: kind tags + status tags), the announcer webhook, and the onboarding option. The webhook URL is printed **once**: paste it into the project repo
 as the `DISCORD_WEBHOOK_URL` Actions secret, add `ANTHROPIC_API_KEY`, and copy
 `templates/discord-announce.yml` into the repo as `.github/workflows/discord-announce.yml`
-with `project_name` set. Every push to `main` then posts a summary to `#announcements`.
+with `project_name` set (it passes the two secrets by name; `secrets: inherit` fails
+from an org-owned repo). Every push to `main` then posts a summary to `#announcements`.
 
 Re-running `new`, `apply` or `init` is safe: only what is missing gets created.
 `plan` always shows the diff first. `archive <slug>` removes the onboarding option and

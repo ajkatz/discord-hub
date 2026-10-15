@@ -49,3 +49,5 @@
 {"ts": "2026-10-15T19:43:13Z", "event": "done", "id": "ISS-01M50HBVRFPJCRQBC5XV8KR7QR", "receipt_sha": "a9481df1942a09dc52bf42daa6d1f980c41931ce", "receipt_tests": "e3b0c44298fc1c14", "predicted_files": 2, "actual_files": -1, "predicted_tokens": 2500, "actual_tokens": null, "wall_s": 0.0}
 {"ts": "2026-10-15T19:44:13Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}
 {"ts": "2026-10-15T19:44:13Z", "event": "health", "deadlocks": 0}
+{"ts": "2026-10-15T19:46:53Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}
+{"ts": "2026-10-15T19:53:26Z", "event": "calibrate", "n": 5, "mae": 0.848, "token_n": 0, "token_mae": null}

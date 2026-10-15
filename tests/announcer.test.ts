@@ -29,7 +29,8 @@ describe('announcer', () => {
   it('the caller template points at this repo and inherits secrets', () => {
     const t = readFileSync('templates/discord-announce.yml', 'utf8');
     expect(t).toMatch(/uses: ajkatz\/discord-hub\/\.github\/workflows\/announce\.yml@/);
-    expect(t).toMatch(/secrets: inherit/);
+    expect(t).toMatch(/DISCORD_WEBHOOK_URL: \$\{\{ secrets\.DISCORD_WEBHOOK_URL \}\}/);
+    expect(t).not.toMatch(/secrets: inherit/);
     expect(t).toMatch(/branches: \[main\]/);
   });
 });
