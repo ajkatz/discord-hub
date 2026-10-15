@@ -9,7 +9,7 @@ import {
   type DiscordApi,
   type Overwrite,
 } from './discord.js';
-import { desiredFor, eqName, type GuildSnapshot, type Hub } from './model.js';
+import { desiredFor, eqName, SHARED_CHANNELS, type GuildSnapshot, type Hub } from './model.js';
 import { mergeOnboarding, type DesiredOption } from './onboarding.js';
 import type { Op } from './plan.js';
 
@@ -158,7 +158,12 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
           }));
           const current = await api.getOnboarding(guildId);
           const body = mergeOnboarding(current, op.promptTitle, desired);
-          if (body) await api.putOnboarding(guildId, { prompts: body });
+          if (body) {
+            // Discord refuses onboarding edits unless >= 7 default channels (5 @everyone-writable)
+            // are listed in the same request; the shared top-level set is exactly that.
+            const defaults = SHARED_CHANNELS.map((n) => snapshot.channels.find((c) => c.parentId === null && c.type === TEXT && eqName(c.name, n))?.id).filter((id): id is string => id !== undefined);
+            await api.putOnboarding(guildId, defaults.length >= 7 ? { prompts: body, default_channel_ids: defaults } : { prompts: body });
+          }
           break;
         }
       }

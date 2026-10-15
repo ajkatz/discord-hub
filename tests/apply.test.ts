@@ -137,6 +137,31 @@ describe('apply stops on the first failure', () => {
   });
 });
 
+describe('onboarding defaults via apply', () => {
+  it('sends the seven shared channels as default channels when they all exist', async () => {
+    const api = new FakeDiscordApi(emptySnapshot());
+    const hub = hubWith(LL);
+    const snap = await api.snapshot(GUILD);
+    const ops = plan(hub, snap, { shared: true });
+    // the shared channels are created in this same run, so the applier sees them on the next pass
+    await apply(ops, api, hub, snap);
+    expect(api.defaultChannelIds).toEqual([]); // shared channels did not exist in that run's snapshot
+    const hub2 = hubWith(LL, { slug: 'goal-planner', name: 'Goal Planner' });
+    const snap2 = await api.snapshot(GUILD);
+    await apply(plan(hub2, snap2), api, hub2, snap2);
+    expect(api.defaultChannelIds).toHaveLength(7);
+    expect(api.defaultChannelIds.every((id) => snap2.channels.some((c) => c.id === id && c.parentId === null))).toBe(true);
+  });
+
+  it('sends only prompts when the shared set is incomplete', async () => {
+    const { api } = await provision();
+    const hub2 = hubWith(LL, { slug: 'goal-planner', name: 'Goal Planner' });
+    const snap = await api.snapshot(GUILD);
+    await apply(plan(hub2, snap), api, hub2, snap);
+    expect(api.defaultChannelIds).toEqual([]);
+  });
+});
+
 describe('set-tags via apply', () => {
   it('keeps existing tag ids and appends the missing names', async () => {
     const { api } = await provision();

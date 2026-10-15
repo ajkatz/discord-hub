@@ -46,6 +46,8 @@ export class FakeDiscordApi implements DiscordApi {
   }
 
   readonly botId = '999000000000000000';
+  /** What the last putOnboarding sent as default channels (Discord's 7-channel minimum). */
+  defaultChannelIds: string[] = [];
 
   async snapshot(guildId: string): Promise<GuildSnapshot> {
     return {
@@ -105,8 +107,9 @@ export class FakeDiscordApi implements DiscordApi {
     return clonePrompts(this.onboarding);
   }
 
-  async putOnboarding(_guildId: string, body: { prompts: PutPrompt[] }): Promise<void> {
+  async putOnboarding(_guildId: string, body: { prompts: PutPrompt[]; default_channel_ids?: string[] }): Promise<void> {
     this.guard('putOnboarding');
+    if (body.default_channel_ids) this.defaultChannelIds = [...body.default_channel_ids];
     const known = new Set(this.onboarding.prompts.map((p) => p.id));
     this.onboarding = {
       enabled: this.onboarding.enabled,

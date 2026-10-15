@@ -46,7 +46,7 @@ export interface DiscordApi {
   modifyChannel(channelId: string, body: { name?: string; topic?: string; available_tags?: { id?: string; name: string }[] }): Promise<void>;
   createWebhook(channelId: string, name: string): Promise<{ id: string; token: string }>;
   getOnboarding(guildId: string): Promise<SnapOnboarding>;
-  putOnboarding(guildId: string, body: { prompts: PutPrompt[] }): Promise<void>;
+  putOnboarding(guildId: string, body: { prompts: PutPrompt[]; default_channel_ids?: string[] }): Promise<void>;
 }
 
 export function webhookUrl(id: string, token: string): string {
@@ -137,7 +137,7 @@ export class RestDiscordApi implements DiscordApi {
     return mapOnboarding((await this.rest.get(Routes.guildOnboarding(guildId))) as APIGuildOnboarding);
   }
 
-  async putOnboarding(guildId: string, body: { prompts: PutPrompt[] }): Promise<void> {
+  async putOnboarding(guildId: string, body: { prompts: PutPrompt[]; default_channel_ids?: string[] }): Promise<void> {
     await this.rest.put(Routes.guildOnboarding(guildId), { body });
   }
 }
