@@ -1,7 +1,7 @@
 ---
 id: ISS-01M4YS4JR84N865A2GE202351A
 type: issue
-status: draft
+status: done
 owner: eng
 title: announcer — reusable push-summary workflow + caller template
 version: 1
@@ -15,6 +15,15 @@ cw_files: 6
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: 7a472bba001b4bd2
+red_time: 2026-10-15T03:23:36Z
+red_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_time: 2026-10-15T03:28:33Z
+receipt_tests: 8691752362af8c77
+actual_files: 0
+actual_files_total: 30
+actual_wall_s: 0.7
 ---
 ## Contract
 

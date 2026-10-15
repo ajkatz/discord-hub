@@ -1,0 +1,20 @@
+# /etc/systemd/system/discord-hub-bot.service
+# Env file (chmod 600): DISCORD_BOT_TOKEN, ANTHROPIC_API_KEY, HUB_PATH, TRIAGE_LEDGER
+[Unit]
+Description=discord-hub triage bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=andrew
+WorkingDirectory=/home/andrew/discord-hub
+EnvironmentFile=/home/andrew/discord-hub.env
+ExecStart=/usr/bin/node dist/bot/index.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,7 +1,7 @@
 ---
 id: ISS-01M4YS4JPD4GTYTH3BC87FY61Q
 type: issue
-status: draft
+status: done
 owner: eng
 title: triage bot — classify, tag status, acknowledge, ledger; bug threads from #general
 version: 1
@@ -15,6 +15,15 @@ cw_files: 9
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: b5c2771f076a7edd
+red_time: 2026-10-15T03:23:35Z
+red_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_time: 2026-10-15T03:28:35Z
+receipt_tests: deb5a77825a9af38
+actual_files: 1
+actual_files_total: 30
+actual_wall_s: 0.7
 ---
 ## Contract
 

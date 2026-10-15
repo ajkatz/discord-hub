@@ -1,0 +1,10 @@
+{
+  "name": "discord-hub-announcer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Summarizes a git push with the Claude API and announces it to a Discord channel webhook (reusable across project repos).",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0"
+  }
+}

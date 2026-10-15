@@ -1,7 +1,7 @@
 ---
 id: ISS-01M4YS4JT1NBYWK02Q0X4XHT4G
 type: issue
-status: draft
+status: done
 owner: eng
 title: pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section
 version: 1
@@ -15,6 +15,15 @@ cw_files: 4
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: 0e31c201b551e389
+red_time: 2026-10-15T03:23:36Z
+red_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_time: 2026-10-15T03:28:34Z
+receipt_tests: c96c46cc31ee841c
+actual_files: 1
+actual_files_total: 30
+actual_wall_s: 0.7
 ---
 ## Contract
 

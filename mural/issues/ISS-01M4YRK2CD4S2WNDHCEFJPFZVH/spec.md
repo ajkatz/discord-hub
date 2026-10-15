@@ -1,7 +1,7 @@
 ---
 id: ISS-01M4YRK2CD4S2WNDHCEFJPFZVH
 type: issue
-status: draft
+status: done
 owner: eng
 title: cli + runbook + readme — init, new, plan, apply, archive
 version: 1
@@ -15,6 +15,15 @@ cw_files: 10
 phase: breadth
 model: mid
 max_turns: 25
+red_receipt: 3a48723b73e14fa0
+red_time: 2026-10-15T03:23:34Z
+red_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_sha: 1e8b554a19636b5ce2c760981fe85f3f4a908cfe
+receipt_time: 2026-10-15T03:28:32Z
+receipt_tests: 5bbff8a5bb2a064b
+actual_files: 4
+actual_files_total: 30
+actual_wall_s: 2.9
 ---
 ## Contract
 

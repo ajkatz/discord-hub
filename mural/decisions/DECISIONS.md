@@ -2,3 +2,4 @@
 # Decisions
 
 - ADR-0001 — discord-hub seeded from the mural kernel template [active] (0001-seeded-from-mural-kernel.md)
+- ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (0002-triage-is-a-resident-bot-on-pi5.md)

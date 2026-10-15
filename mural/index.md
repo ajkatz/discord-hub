@@ -3,6 +3,7 @@
 
 ## adr
 - ADR-0001 — discord-hub seeded from the mural kernel template [active] (mural/decisions/0001-seeded-from-mural-kernel.md)
+- ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (mural/decisions/0002-triage-is-a-resident-bot-on-pi5.md)
 
 ## asm
 - ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [unvalidated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
@@ -19,10 +20,10 @@
 - ISS-01M4YRK271FFV7JQGVRH31XMB5 — model + planner — hub.json truth, pure diff against a guild snapshot [done] (mural/issues/ISS-01M4YRK271FFV7JQGVRH31XMB5/spec.md)
 - ISS-01M4YRK28WWY8PXJ54M3MNX4M0 — discord api seam + in-memory fake + applier — idempotent execution [done] (mural/issues/ISS-01M4YRK28WWY8PXJ54M3MNX4M0/spec.md)
 - ISS-01M4YRK2AMTS9NS8QGGV8PZRCV — onboarding merge — preserve ids, add/remove options, placeholder prompt id [done] (mural/issues/ISS-01M4YRK2AMTS9NS8QGGV8PZRCV/spec.md)
-- ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [draft] (mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md)
-- ISS-01M4YS4JPD4GTYTH3BC87FY61Q — triage bot — classify, tag status, acknowledge, ledger; bug threads from #general [draft] (mural/issues/ISS-01M4YS4JPD4GTYTH3BC87FY61Q/spec.md)
-- ISS-01M4YS4JR84N865A2GE202351A — announcer — reusable push-summary workflow + caller template [draft] (mural/issues/ISS-01M4YS4JR84N865A2GE202351A/spec.md)
-- ISS-01M4YS4JT1NBYWK02Q0X4XHT4G — pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section [draft] (mural/issues/ISS-01M4YS4JT1NBYWK02Q0X4XHT4G/spec.md)
+- ISS-01M4YRK2CD4S2WNDHCEFJPFZVH — cli + runbook + readme — init, new, plan, apply, archive [done] (mural/issues/ISS-01M4YRK2CD4S2WNDHCEFJPFZVH/spec.md)
+- ISS-01M4YS4JPD4GTYTH3BC87FY61Q — triage bot — classify, tag status, acknowledge, ledger; bug threads from #general [done] (mural/issues/ISS-01M4YS4JPD4GTYTH3BC87FY61Q/spec.md)
+- ISS-01M4YS4JR84N865A2GE202351A — announcer — reusable push-summary workflow + caller template [done] (mural/issues/ISS-01M4YS4JR84N865A2GE202351A/spec.md)
+- ISS-01M4YS4JT1NBYWK02Q0X4XHT4G — pi deploy — systemd unit, rsync deploy script (DRY_RUN), runbook section [done] (mural/issues/ISS-01M4YS4JT1NBYWK02Q0X4XHT4G/spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural/process/playbooks/armament.md)

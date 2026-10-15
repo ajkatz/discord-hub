@@ -1,0 +1,69 @@
+name: Announce pushes to Discord (reusable)
+
+# Called from each project repo's .github/workflows/discord-announce.yml (see
+# templates/discord-announce.yml). Summarizes the push with the Claude API and posts
+# one embed to the project's #announcements webhook. Setup: docs/runbook.md §3.
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        description: Display name for the embed and summary (default: the repo name)
+        type: string
+        required: false
+        default: ""
+      project_description:
+        description: One line about the project, fed to the summarizer
+        type: string
+        required: false
+        default: ""
+      hub_ref:
+        description: Ref of ajkatz/discord-hub to take the announcer from
+        type: string
+        required: false
+        default: main
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        description: Channel webhook URL printed by `discord-hub new`
+        required: true
+      ANTHROPIC_API_KEY:
+        description: Enables AI summaries; without it a plain commit list is posted
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.head_commit != null }}
+    steps:
+      - name: Check out the project (full history, for the feature-registry diff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out the announcer
+        uses: actions/checkout@v4
+        with:
+          repository: ajkatz/discord-hub
+          ref: ${{ inputs.hub_ref }}
+          path: .discord-hub
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install announcer dependencies
+        working-directory: .discord-hub/announcer
+        run: npm install --no-audit --no-fund
+
+      - name: Summarize and announce
+        working-directory: .discord-hub/announcer
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          PROJECT_NAME: ${{ inputs.project_name }}
+          PROJECT_DESCRIPTION: ${{ inputs.project_description }}
+        run: node announce.mjs

@@ -1,0 +1,23 @@
+# Copy to <project repo>/.github/workflows/discord-announce.yml.
+# Secrets to add in that repo: DISCORD_WEBHOOK_URL (printed once by `discord-hub new`),
+# ANTHROPIC_API_KEY (optional; without it the post is a plain commit list).
+name: Announce pushes to Discord
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: discord-announce-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    uses: ajkatz/discord-hub/.github/workflows/announce.yml@main
+    with:
+      project_name: "Loadout Lab"
+      project_description: "Loadout Lab is a RuneLite (Old School RuneScape) plugin that finds the best-in-slot gear a player already owns."
+    secrets: inherit

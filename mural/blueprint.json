@@ -33,6 +33,42 @@
    ]
   },
   {
+   "module": "triage",
+   "writes": [
+    "src/bot/types.ts",
+    "src/bot/triage.ts",
+    "src/bot/ledger.ts"
+   ]
+  },
+  {
+   "module": "classifier",
+   "writes": [
+    "src/bot/classifier.ts"
+   ]
+  },
+  {
+   "module": "bot",
+   "writes": [
+    "src/bot/index.ts",
+    "src/bot/channels.ts"
+   ]
+  },
+  {
+   "module": "announcer",
+   "writes": [
+    "announcer/announce.mjs",
+    ".github/workflows/announce.yml",
+    "templates/discord-announce.yml"
+   ]
+  },
+  {
+   "module": "deploy",
+   "writes": [
+    "deploy/discord-hub-bot.service",
+    "scripts/deploy-pi.sh"
+   ]
+  },
+  {
    "module": "cli",
    "writes": [
     "src/cli.ts",
@@ -110,6 +146,49 @@
    ]
   },
   {
+   "id": "ISS-01M4YS4JPD4GTYTH3BC87FY61Q",
+   "kind": "issue",
+   "title": "triage bot \u2014 classify, tag status, acknowledge, ledger; bug threads from #general",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YS4JPD4GTYTH3BC87FY61Q/spec.md",
+   "writes": [
+    "src/bot",
+    "tests/triage.test.ts",
+    "tests/ledger.test.ts",
+    "tests/channels.test.ts",
+    "tests/accept-triage.sh",
+    "package.json"
+   ]
+  },
+  {
+   "id": "ISS-01M4YS4JR84N865A2GE202351A",
+   "kind": "issue",
+   "title": "announcer \u2014 reusable push-summary workflow + caller template",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YS4JR84N865A2GE202351A/spec.md",
+   "writes": [
+    "announcer/announce.mjs",
+    "announcer/package.json",
+    ".github/workflows/announce.yml",
+    "templates/discord-announce.yml",
+    "tests/announcer.test.ts",
+    "tests/accept-announcer.sh"
+   ]
+  },
+  {
+   "id": "ISS-01M4YS4JT1NBYWK02Q0X4XHT4G",
+   "kind": "issue",
+   "title": "pi deploy \u2014 systemd unit, rsync deploy script (DRY_RUN), runbook section",
+   "status": "draft",
+   "sourceLocation": "mural/issues/ISS-01M4YS4JT1NBYWK02Q0X4XHT4G/spec.md",
+   "writes": [
+    "deploy/discord-hub-bot.service",
+    "scripts/deploy-pi.sh",
+    "tests/deploy.test.ts",
+    "tests/accept-deploy.sh"
+   ]
+  },
+  {
    "id": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
    "kind": "prd",
    "title": "discord-hub \u2014 one server, one sub-community per plugin, spawned by CLI",
@@ -137,6 +216,21 @@
   {
    "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
    "to": "ISS-01M4YRK2CD4S2WNDHCEFJPFZVH",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YS4JPD4GTYTH3BC87FY61Q",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YS4JR84N865A2GE202351A",
+   "type": "derives"
+  },
+  {
+   "from": "PRD-01M4YRFMPVGJJ0XENSA97NBGBW",
+   "to": "ISS-01M4YS4JT1NBYWK02Q0X4XHT4G",
    "type": "derives"
   }
  ]
