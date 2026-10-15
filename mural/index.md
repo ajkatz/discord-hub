@@ -4,6 +4,7 @@
 ## adr
 - ADR-0001 — discord-hub seeded from the mural kernel template [active] (mural/decisions/0001-seeded-from-mural-kernel.md)
 - ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (mural/decisions/0002-triage-is-a-resident-bot-on-pi5.md)
+- ADR-0003 — Calibration breach — fix the measurement, add a live-iteration lane [draft] (mural/decisions/0003-calibration-breach-and-live-lane.md)
 
 ## asm
 - ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural/assumptions/ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
