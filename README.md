@@ -39,7 +39,9 @@ node bin/discord-hub.mjs plan --snapshot tests/fixtures/empty.json --hub tests/f
 ```
 
 `hub.json` is the truth; every command diffs it against the live guild and creates only
-what is missing, so re-running is safe. Webhook URLs print once and are never written to
+what is missing, so re-running is safe. A project's `emoji` (unicode) or `emojiId` (a
+server emoji id, e.g. the plugin icon uploaded as an emoji) is what members see in the
+onboarding pick-list. Webhook URLs print once and are never written to
 disk. Full setup, migration of the old servers, and the pi deployment: [docs/runbook.md](docs/runbook.md).
 
 ## Announcer
