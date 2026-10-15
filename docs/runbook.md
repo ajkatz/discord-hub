@@ -55,7 +55,8 @@ A push that went unannounced (a broken secret, a failed run) is replayed by hand
 Actions -> "Announce pushes to Discord" -> Run workflow, `from` = the last commit or tag
 that was announced, `to` empty for the branch head. The post is built from git history
 and looks exactly like the one the push would have made; a range that only touches
-`.github/` posts nothing.
+`.github/` posts nothing. The post wears the repo's `icon.png` (the hub plugins all
+carry one at the root); pass `project_icon_url` in the caller to use another image.
 
 Re-running `new`, `apply` or `init` is safe: only what is missing gets created.
 `plan` always shows the diff first. `archive <slug>` removes the onboarding option and

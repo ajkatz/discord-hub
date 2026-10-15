@@ -54,3 +54,7 @@
 {"ts": "2026-10-15T21:02:41Z", "event": "gate-ready", "id": "ISS-01M50NYZ1380FBNRBGPTF4X2EP", "result": "pass", "live": false}
 {"ts": "2026-10-15T21:04:17Z", "event": "red", "id": "ISS-01M50NYZ1380FBNRBGPTF4X2EP", "red_receipt": "c595696e0649888c"}
 {"ts": "2026-10-15T21:15:23Z", "event": "done", "id": "ISS-01M50NYZ1380FBNRBGPTF4X2EP", "receipt_sha": "71f235c7894c6b5928be8bb90349fc0c61006c0b", "receipt_tests": "36c77fe998e08c2f", "predicted_files": 6, "actual_files": 6, "predicted_tokens": 5000, "actual_tokens": null, "wall_s": 6.4}
+{"ts": "2026-10-15T21:26:54Z", "event": "gate-ready", "id": "ISS-01M50QB7KJS0363BAHA26Q2AM1", "result": "pass", "live": false}
+{"ts": "2026-10-15T21:26:57Z", "event": "red", "id": "ISS-01M50QB7KJS0363BAHA26Q2AM1", "red_receipt": "521e897ee5160b57"}
+{"ts": "2026-10-15T21:32:17Z", "event": "red", "id": "ISS-01M50QB7KJS0363BAHA26Q2AM1", "red_receipt": "12258d6432ad47df"}
+{"ts": "2026-10-15T21:33:08Z", "event": "done", "id": "ISS-01M50QB7KJS0363BAHA26Q2AM1", "receipt_sha": "7c7f94b30e5807a4edb401846ddb389c87390fcb", "receipt_tests": "a31400b6bb034880", "predicted_files": 3, "actual_files": 3, "predicted_tokens": 4000, "actual_tokens": null, "wall_s": 14.7}

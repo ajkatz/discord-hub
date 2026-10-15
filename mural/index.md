@@ -43,6 +43,7 @@
 - ISS-01M50HBVPQQW1P0YNM7AP6ZXZD — announce.yml — quote input descriptions; test parses both workflow files [done] (mural\issues\ISS-01M50HBVPQQW1P0YNM7AP6ZXZD\spec.md)
 - ISS-01M50HBVRFPJCRQBC5XV8KR7QR — docs — handoff note for provisioning from another machine [done] (mural\issues\ISS-01M50HBVRFPJCRQBC5XV8KR7QR\spec.md)
 - ISS-01M50NYZ1380FBNRBGPTF4X2EP — announcer replays a missed push on demand [done] (mural\issues\ISS-01M50NYZ1380FBNRBGPTF4X2EP\spec.md)
+- ISS-01M50QB7KJS0363BAHA26Q2AM1 — announcer field batch - long commit lists, empty AI summaries, file lists from git, the project's icon [done] (mural\issues\ISS-01M50QB7KJS0363BAHA26Q2AM1\spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural\process\playbooks\armament.md)

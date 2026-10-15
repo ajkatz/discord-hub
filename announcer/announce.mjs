@@ -14,6 +14,7 @@
 //   GITHUB_WORKSPACE     (set by Actions)     repo root (for git commands)
 //   PROJECT_NAME         (optional)           display name; default: repo name
 //   PROJECT_DESCRIPTION  (optional)           one line about the project for the summary
+//   PROJECT_ICON_URL     (optional)           avatar for the post; default: the repo's icon.png
 //   REPLAY_FROM          (optional)           make-up run: announce the commits after this ref
 //   REPLAY_TO            (optional)           ...up to this ref (default HEAD); needs REPLAY_FROM
 
@@ -103,11 +104,24 @@ if (commits.length === 0) {
   process.exit(0);
 }
 
-// Distinct files touched across the push.
+// Distinct files touched across the push. A live payload has shipped commits
+// with no file lists at all (Loadout Lab 541f584, 2026-10-15: a .github-only
+// push was announced), so an empty set is re-read from git, which the
+// workflow checks out with full history.
 const changedFiles = new Set();
 for (const c of commits) {
   for (const f of [...(c.added ?? []), ...(c.modified ?? []), ...(c.removed ?? [])]) {
     changedFiles.add(f);
+  }
+}
+if (changedFiles.size === 0 && before !== ZERO_SHA && after !== ZERO_SHA) {
+  try {
+    for (const f of git("diff", "--name-only", `${before}..${after}`).split("\n")) {
+      if (f) changedFiles.add(f);
+    }
+    log(`Payload listed no files; git names ${changedFiles.size}.`);
+  } catch {
+    log("Payload listed no files and git could not diff the range.");
   }
 }
 const featuresChanged = changedFiles.has(FEATURES_PATH);
@@ -115,7 +129,7 @@ const featuresChanged = changedFiles.has(FEATURES_PATH);
 // Housekeeping pushes (workflows, CI scripts) are not news for players.
 const SILENT_PREFIXES = [".github/"];
 if (changedFiles.size > 0 && [...changedFiles].every((f) => SILENT_PREFIXES.some((p) => f.startsWith(p)))) {
-  log("Push only touched CI/automation files — nothing for players. Exiting cleanly.");
+  log(`Push only touched CI/automation files (${changedFiles.size} file(s)) — nothing for players. Exiting cleanly.`);
   process.exit(0);
 }
 const hasFeatCommit = commits.some((c) => /^feat(\(|:|!)/i.test(c.message ?? ""));
@@ -236,7 +250,13 @@ let summary;
 if (process.env.ANTHROPIC_API_KEY) {
   try {
     summary = await claudeSummary();
-    log("Generated summary via Claude.");
+    if (summary) {
+      log("Generated summary via Claude.");
+    } else {
+      // Seen live 2026-10-15: a 10-commit replay posted with no description.
+      log("Claude returned an empty summary; using plain fallback.");
+      summary = plainSummary();
+    }
   } catch (err) {
     log(`Claude summary failed (${err?.message ?? err}); using plain fallback.`);
     summary = plainSummary();
@@ -255,28 +275,43 @@ if (summary.length > 3800) summary = summary.slice(0, 3797) + "…";
 const truncateField = (str, limit = 1024) =>
   str.length > limit ? str.slice(0, limit - 1) + "…" : str;
 
-// Commit list field: linked short shas + subjects. Cap to fit Discord's limit.
-const commitLines = [];
+// Commit list: linked short shas + subjects, spread over as many fields as
+// Discord allows (1024 chars each, 6000 for the whole embed) - one capped
+// field cut a ten-commit release to "…and 6 more" with no way to see the
+// rest (Andrew, 2026-10-15). The overflow note only appears when even the
+// embed budget runs out.
+const FIELD_LIMIT = 1024;
+const EMBED_BUDGET = 5600 - summary.length;
+const fields = [];
 let overflow = 0;
+let spent = 0;
+let chunk = [];
+let chunkLen = 0;
+const flush = () => {
+  if (!chunk.length) return;
+  fields.push({
+    name: fields.length ? "Commits (continued)" : commits.length === 1 ? "Commit" : `Commits (${commits.length})`,
+    value: chunk.join("\n"),
+  });
+  spent += chunkLen + 24;
+  chunk = [];
+  chunkLen = 0;
+};
 for (const c of commits) {
   const shortSha = (c.id ?? "").slice(0, 7);
   const subject = (c.message ?? "").split("\n")[0];
   const author = c.author?.username || c.author?.name || "unknown";
   const line = `[\`${shortSha}\`](${c.url}) ${subject} — ${author}`;
-  if (commitLines.join("\n").length + line.length + 1 > 980) {
+  if (overflow || spent + chunkLen + line.length + 40 > EMBED_BUDGET) {
     overflow++;
     continue;
   }
-  commitLines.push(line);
+  if (chunkLen + line.length + 1 > FIELD_LIMIT - 24) flush();
+  chunk.push(line);
+  chunkLen += line.length + 1;
 }
-if (overflow > 0) commitLines.push(`_…and ${overflow} more_`);
-
-const fields = [
-  {
-    name: commits.length === 1 ? "Commit" : `Commits (${commits.length})`,
-    value: truncateField(commitLines.join("\n")),
-  },
-];
+if (overflow > 0) chunk.push(`_…and ${overflow} more_`);
+flush();
 
 if (newFeatures.length) {
   fields.push({
@@ -303,8 +338,23 @@ const embed = {
   timestamp: event.head_commit?.timestamp || new Date().toISOString(),
 };
 
+// The post wears the project's icon (Andrew, 2026-10-15): an explicit URL, else
+// the repo's own icon.png at the announced commit when git has it there.
+function iconUrl() {
+  if (process.env.PROJECT_ICON_URL) return process.env.PROJECT_ICON_URL;
+  const html = event.repository?.html_url ?? "";
+  if (!html || after === ZERO_SHA) return undefined;
+  try {
+    git("cat-file", "-e", `${after}:icon.png`);
+    return `https://raw.githubusercontent.com/${repoFullName}/${after}/icon.png`;
+  } catch {
+    return undefined;
+  }
+}
+
 const payload = {
   username: projectName,
+  avatar_url: iconUrl(),
   embeds: [embed],
   allowed_mentions: { parse: [] }, // don't let commit-message @mentions ping
 };

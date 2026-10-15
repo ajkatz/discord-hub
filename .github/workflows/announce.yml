@@ -31,6 +31,11 @@ on:
         type: string
         required: false
         default: ""
+      project_icon_url:
+        description: "Avatar for the post (default: the repo's icon.png at the announced commit)"
+        type: string
+        required: false
+        default: ""
     secrets:
       DISCORD_WEBHOOK_URL:
         description: "Channel webhook URL printed by discord-hub new"
@@ -79,4 +84,5 @@ jobs:
           PROJECT_DESCRIPTION: ${{ inputs.project_description }}
           REPLAY_FROM: ${{ inputs.replay_from }}
           REPLAY_TO: ${{ inputs.replay_to }}
+          PROJECT_ICON_URL: ${{ inputs.project_icon_url }}
         run: node announce.mjs
