@@ -36,7 +36,8 @@ the onboarding pick-list option. Then:
 1. Store the printed webhook URL as the repo's `DISCORD_WEBHOOK_URL` Actions secret
    (`gh secret set DISCORD_WEBHOOK_URL -R owner/repo`), add `ANTHROPIC_API_KEY`, and copy
    `templates/discord-announce.yml` into the repo as `.github/workflows/discord-announce.yml`
-   with `project_name` set. Only if the repo should announce pushes.
+   with `project_name` set; it passes the two secrets by name (`secrets: inherit` fails
+   from an org-owned repo). Only if the repo should announce pushes.
 2. `git commit -am "hub: katz-stats" && git push` so every machine has the same `hub.json`.
 3. On the pi, the bot reloads `hub.json` every 15 minutes, but it reads its own copy:
    `scripts/deploy-pi.sh andrew@pi5.localdomain` from any machine rsyncs it (no restart
