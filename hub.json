@@ -64,6 +64,13 @@
       "name": "Forever Weapon Buffs",
       "emoji": "⚔️",
       "repo": "ajkatz/AKForeverWeaponBuffs"
+    },
+    {
+      "slug": "forever-lfg-radar",
+      "name": "Forever LFG Radar",
+      "emoji": "📡",
+      "repo": "ajkatz/AKForeverLFGRadar",
+      "emojiId": "1562251272340508793"
     }
   ]
 }
