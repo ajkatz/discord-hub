@@ -9,7 +9,7 @@
 
 ## asm
 - ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural\assumptions\ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
-- ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2 — One onboarding PUT can create several new prompts with distinct placeholder ids and drop another [unvalidated] (mural\assumptions\ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2-several-new-onboarding-prompts-in-one-put.md)
+- ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2 — One onboarding PUT can create several new prompts with distinct placeholder ids and drop another [validated] (mural\assumptions\ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2-several-new-onboarding-prompts-in-one-put.md)
 
 ## co
 - CO-01M50HBW4FGVWW46SFDG3SGP1B — PRD v3 -> v4 — reconcile the requirements with what shipped on 2026-10-14/15 [active] (mural\changes\CO-01M50HBW4FGVWW46SFDG3SGP1B-prd-v4-reconciliation.md)

@@ -1,89 +1,119 @@
 {
   "guildId": "1524847121562468514",
   "onboardingPrompt": "Which plugins do you use?",
+  "gamePrompt": "What do you play?",
+  "games": [
+    {
+      "slug": "osrs",
+      "name": "Old School RuneScape",
+      "chat": "osrs-chat",
+      "prompt": "Which RuneLite plugins do you use?",
+      "emoji": "🗡️",
+      "emojiId": "1562514652322209822"
+    },
+    {
+      "slug": "wow-forever",
+      "name": "WoW: Forever",
+      "chat": "wow-forever-chat",
+      "prompt": "Which WoW: Forever addons do you use?",
+      "emoji": "♾️"
+    }
+  ],
   "projects": [
     {
       "slug": "loadout-lab",
       "name": "Loadout Lab",
       "emoji": "🧪",
       "repo": "ajkatz/runelite-loadout-lab",
-      "emojiId": "1560151538830155776"
+      "emojiId": "1560151538830155776",
+      "game": "osrs"
     },
     {
       "slug": "goal-planner",
       "name": "Goal Planner",
       "emoji": "🎯",
       "repo": "ajkatz/runelite-goal-planner",
-      "emojiId": "1560151540373651596"
+      "emojiId": "1560151540373651596",
+      "game": "osrs"
     },
     {
       "slug": "trappy-chinchompa",
       "name": "Trappy Chinchompa",
       "emoji": "🐿️",
       "repo": "AKAddons/runelite-trappy-chinchompa",
-      "emojiId": "1560161958349774918"
+      "emojiId": "1560161958349774918",
+      "game": "osrs"
     },
     {
       "slug": "forever-bags",
       "name": "Forever Bags",
       "emoji": "🎒",
       "repo": "ajkatz/AKForeverBags",
-      "emojiId": "1560403877113757726"
+      "emojiId": "1560403877113757726",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-chat-filter",
       "name": "Forever Chat Filter",
       "emoji": "💬",
       "repo": "ajkatz/AKForeverChatFilter",
-      "emojiId": "1560408408899854418"
+      "emojiId": "1560408408899854418",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-combat-timers",
       "name": "Forever Combat Timers",
       "emoji": "⏱️",
       "repo": "ajkatz/AKForeverCombatTimers",
-      "emojiId": "1560430907419000923"
+      "emojiId": "1560430907419000923",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-nice-warstomp",
       "name": "Forever Nice Warstomp",
       "emoji": "🐂",
       "repo": "ajkatz/AKForeverNiceWarstomp",
-      "emojiId": "1560431064483237938"
+      "emojiId": "1560431064483237938",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-targeter",
       "name": "Forever Targeter",
       "emoji": "🎯",
       "repo": "ajkatz/AKForeverTargeter",
-      "emojiId": "1560431179973525604"
+      "emojiId": "1560431179973525604",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-tooltip",
       "name": "Forever Tooltip",
       "emoji": "🏷️",
       "repo": "ajkatz/AKForeverTooltip",
-      "emojiId": "1560412655662010398"
+      "emojiId": "1560412655662010398",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-combat-buffs",
       "name": "Forever Combat Buffs",
       "emoji": "⚔️",
       "repo": "ajkatz/AKForeverCombatBuffs",
-      "emojiId": "1562412999095099525"
+      "emojiId": "1562412999095099525",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-lfg-radar",
       "name": "Forever LFG Radar",
       "emoji": "📡",
       "repo": "ajkatz/AKForeverLFGRadar",
-      "emojiId": "1562251272340508793"
+      "emojiId": "1562251272340508793",
+      "game": "wow-forever"
     },
     {
       "slug": "forever-alt-mailer",
       "name": "Forever Alt Mailer",
       "repo": "ajkatz/AKForeverAltMailer",
-      "emojiId": "1562352222107475988"
+      "emojiId": "1562352222107475988",
+      "game": "wow-forever"
     }
   ]
 }
