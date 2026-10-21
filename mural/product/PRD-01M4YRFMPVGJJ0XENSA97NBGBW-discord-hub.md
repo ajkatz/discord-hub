@@ -5,7 +5,7 @@ status: draft
 owner: pm
 title: discord-hub — one server, one sub-community per plugin, spawned by CLI
 version: 4
-open_questions: []
+open_questions: ["OQ-1 (REQ-004 'route one level higher from OSRS / WoW Forever'): the onboarding shape - a game question first then one plugin question per game, game-level roles and channels behind it, or the one question grouped by game; Andrew picks"]
 locales: [all]
 compliance: [gdpr, eaa]
 data: [discord-guild-structure, member-forum-posts-sent-to-claude, triage-ledger-jsonl, tokens-env-only]
@@ -31,6 +31,18 @@ data: [discord-guild-structure, member-forum-posts-sent-to-claude, triage-ledger
 > rationalize each piece * report when changes are being published automatically (like
 > in loadout lab) * the ability to create threads  for issues and automatically mark
 > their status as acknowledged, known, not an issue, etc"
+
+> REQ-004 (verbatim, Andrew, 2026-10-21): "discord has some other issues: * users are
+> going into the old welcome channel under archive instead of the new one *
+> announcements for forever addons aren't announcing with the icon as the avatar *
+> except for LFG radar and alt mailer, all of the channels & roles have the wrong icons
+> for forever addons" · "and we need to rename forever weapon buffs to forever combat
+> buffs in discord" · "maybe welcome can route one level higher from OSRS / WoW Forever
+> into the subcategories from there". Routed: the avatar = ISS-01M5EZHEM8H09W2WFTB1SB48R3
+> (done); the icons (emojiId per Forever project), the rename (category + role renamed in
+> place, slug/name/repo in hub.json) and the system messages channel (from #old-general to
+> #welcome) = operations run by Andrew (Development/Claude/fix-discord.ps1); the routing =
+> OQ-1.
 
 ## Problem
 
