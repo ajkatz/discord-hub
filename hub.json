@@ -27,43 +27,50 @@
       "slug": "forever-bags",
       "name": "Forever Bags",
       "emoji": "🎒",
-      "repo": "ajkatz/AKForeverBags"
+      "repo": "ajkatz/AKForeverBags",
+      "emojiId": "1560403877113757726"
     },
     {
       "slug": "forever-chat-filter",
       "name": "Forever Chat Filter",
       "emoji": "💬",
-      "repo": "ajkatz/AKForeverChatFilter"
+      "repo": "ajkatz/AKForeverChatFilter",
+      "emojiId": "1560408408899854418"
     },
     {
       "slug": "forever-combat-timers",
       "name": "Forever Combat Timers",
       "emoji": "⏱️",
-      "repo": "ajkatz/AKForeverCombatTimers"
+      "repo": "ajkatz/AKForeverCombatTimers",
+      "emojiId": "1560430907419000923"
     },
     {
       "slug": "forever-nice-warstomp",
       "name": "Forever Nice Warstomp",
       "emoji": "🐂",
-      "repo": "ajkatz/AKForeverNiceWarstomp"
+      "repo": "ajkatz/AKForeverNiceWarstomp",
+      "emojiId": "1560431064483237938"
     },
     {
       "slug": "forever-targeter",
       "name": "Forever Targeter",
       "emoji": "🎯",
-      "repo": "ajkatz/AKForeverTargeter"
+      "repo": "ajkatz/AKForeverTargeter",
+      "emojiId": "1560431179973525604"
     },
     {
       "slug": "forever-tooltip",
       "name": "Forever Tooltip",
       "emoji": "🏷️",
-      "repo": "ajkatz/AKForeverTooltip"
+      "repo": "ajkatz/AKForeverTooltip",
+      "emojiId": "1560412655662010398"
     },
     {
-      "slug": "forever-weapon-buffs",
-      "name": "Forever Weapon Buffs",
+      "slug": "forever-combat-buffs",
+      "name": "Forever Combat Buffs",
       "emoji": "⚔️",
-      "repo": "ajkatz/AKForeverWeaponBuffs"
+      "repo": "ajkatz/AKForeverCombatBuffs",
+      "emojiId": "1562412999095099525"
     },
     {
       "slug": "forever-lfg-radar",
