@@ -49,7 +49,7 @@
       "name": "Forever Bags",
       "emoji": "🎒",
       "repo": "ajkatz/AKForeverBags",
-      "emojiId": "1560403877113757726",
+      "emojiId": "1562541269123727442",
       "game": "wow-forever"
     },
     {
@@ -57,7 +57,7 @@
       "name": "Forever Chat Filter",
       "emoji": "💬",
       "repo": "ajkatz/AKForeverChatFilter",
-      "emojiId": "1560408408899854418",
+      "emojiId": "1562541271891972096",
       "game": "wow-forever"
     },
     {
@@ -65,7 +65,7 @@
       "name": "Forever Combat Timers",
       "emoji": "⏱️",
       "repo": "ajkatz/AKForeverCombatTimers",
-      "emojiId": "1560430907419000923",
+      "emojiId": "1562541276224684123",
       "game": "wow-forever"
     },
     {
@@ -73,7 +73,7 @@
       "name": "Forever Nice Warstomp",
       "emoji": "🐂",
       "repo": "ajkatz/AKForeverNiceWarstomp",
-      "emojiId": "1560431064483237938",
+      "emojiId": "1562541279550644304",
       "game": "wow-forever"
     },
     {
@@ -81,7 +81,7 @@
       "name": "Forever Targeter",
       "emoji": "🎯",
       "repo": "ajkatz/AKForeverTargeter",
-      "emojiId": "1560431179973525604",
+      "emojiId": "1562541283363397664",
       "game": "wow-forever"
     },
     {
@@ -89,7 +89,7 @@
       "name": "Forever Tooltip",
       "emoji": "🏷️",
       "repo": "ajkatz/AKForeverTooltip",
-      "emojiId": "1560412655662010398",
+      "emojiId": "1562541287452708964",
       "game": "wow-forever"
     },
     {
@@ -97,7 +97,7 @@
       "name": "Forever Combat Buffs",
       "emoji": "⚔️",
       "repo": "ajkatz/AKForeverCombatBuffs",
-      "emojiId": "1562412999095099525",
+      "emojiId": "1562541290858619002",
       "game": "wow-forever"
     },
     {
@@ -105,14 +105,14 @@
       "name": "Forever LFG Radar",
       "emoji": "📡",
       "repo": "ajkatz/AKForeverLFGRadar",
-      "emojiId": "1562251272340508793",
+      "emojiId": "1562541293286989965",
       "game": "wow-forever"
     },
     {
       "slug": "forever-alt-mailer",
       "name": "Forever Alt Mailer",
       "repo": "ajkatz/AKForeverAltMailer",
-      "emojiId": "1562352222107475988",
+      "emojiId": "1562541295321489582",
       "game": "wow-forever"
     }
   ]
