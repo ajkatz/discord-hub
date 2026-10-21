@@ -4,8 +4,8 @@ type: prd
 status: draft
 owner: pm
 title: discord-hub — one server, one sub-community per plugin, spawned by CLI
-version: 4
-open_questions: ["OQ-1 (REQ-004 'route one level higher from OSRS / WoW Forever'): the onboarding shape - a game question first then one plugin question per game, game-level roles and channels behind it, or the one question grouped by game; Andrew picks"]
+version: 5
+open_questions: []
 locales: [all]
 compliance: [gdpr, eaa]
 data: [discord-guild-structure, member-forum-posts-sent-to-claude, triage-ledger-jsonl, tokens-env-only]
@@ -43,6 +43,10 @@ data: [discord-guild-structure, member-forum-posts-sent-to-claude, triage-ledger
 > place, slug/name/repo in hub.json) and the system messages channel (from #old-general to
 > #welcome) = operations run by Andrew (Development/Claude/fix-discord.ps1); the routing =
 > OQ-1.
+
+> REQ-005 (verbatim, Andrew, 2026-10-21, answering OQ-1 between A two plugin questions,
+> B a game question that opens a game-wide area then the plugin questions, C one question
+> grouped by game): "B but lets call it #wow-forever-chat". OQ-1 resolved; ADR-0004.
 
 ## Problem
 
@@ -127,6 +131,33 @@ project, and where creating that sub-community for a new project is trivial.
 - WHEN `discord-hub archive <slug>` runs, THE SYSTEM SHALL remove the project's
   onboarding option and rename its category with an `[archived]` prefix, deleting
   nothing.
+
+### Games (REQ-004 "route one level higher from OSRS / WoW Forever into the subcategories", REQ-005, ADR-0004)
+
+- WHEN `hub.json` lists `games` (each a `slug`, a `name`, a `chat` channel name, the
+  `prompt` title of its plugin question, an optional `emoji` or `emojiId`) with a
+  `gamePrompt`, THE SYSTEM SHALL give every game a mentionable role named `<slug>`, a
+  private category named `<name>` visible only to that role (with the bot's member
+  overwrite), and in it a text channel named `<chat>` where the role posts
+  (`#osrs-chat`, `#wow-forever-chat`).
+- WHEN games exist, THE SYSTEM SHALL require every live project to name one of them in
+  `game` and SHALL refuse a `hub.json` whose project names an unknown game; WHEN no
+  games exist, a project SHALL NOT name one.
+- WHEN games exist, THE SYSTEM SHALL keep the onboarding as: first the `gamePrompt`
+  question, one option per game that grants the game's role, opts the member into the
+  game's chat and carries its emoji; then one question per game that has live projects,
+  in `games` order, titled with its `prompt`, one option per live project of that game
+  that grants the project's role and opts the member into the project's channels. The
+  question titled `onboardingPrompt` SHALL be dropped unless it is one of these. The hub's
+  questions SHALL be written as one block in that order (existing questions and options
+  keep their ids) and questions the hub does not manage are left as they are.
+- WHEN `hub.json` lists `retiredPrompts`, THE SYSTEM SHALL drop the live questions with
+  those titles (how a renamed question's old title leaves) and SHALL refuse a title that is
+  both asked and retired; it SHALL never drop a question whose title it does not know.
+- WHEN `hub.json` lists no games, THE SYSTEM SHALL keep the single question titled
+  `onboardingPrompt` with one option per live project, exactly as before.
+- WHEN `new <slug>` runs and `hub.json` has games, THE SYSTEM SHALL require
+  `--game <game slug>` naming one of them; without games it SHALL refuse `--game`.
 - WHEN the bot token is needed, THE SYSTEM SHALL read it from `DISCORD_BOT_TOKEN`
   only; it SHALL never be stored in `hub.json` or any file in the repo.
 - WHEN a Discord API call fails, THE SYSTEM SHALL print the endpoint, HTTP status and
@@ -231,6 +262,27 @@ project, and where creating that sub-community for a new project is trivial.
   structures appear in Discord and a second `apply` is a no-op (validates
   ASM-01M4YRFMTAFAVY3TMZ72H5QP92; validated 2026-10-14 on guild 1524847121562468514,
   after the bot overwrite and onboarding-defaults fixes above).
+
+- Given a hub with two games and three projects and an empty guild When `plan` runs Then
+  per game it creates a role, a private category and its chat channel, per project what
+  it did before, and one onboarding op whose questions are the game question and then one
+  question per game in `games` order.
+- Given the fake guild carrying the single "Which plugins do you use?" question When the
+  game layer is applied Then the PUT has the game question first and one question per
+  game, the single question is gone, each game option carries its role and chat, each
+  project option its own role and channels, and a second `plan` is empty.
+- Given a game whose question was dropped (no live projects) When a project of it comes
+  back Then its question returns in its place in `games` order; Given live questions out
+  of order Then `plan` re-plans; Given a retired title Then it is dropped once.
+- Given an onboarding with the hub's questions and a question the hub does not manage
+  When the merge runs Then the managed ones keep their ids and positions, the unmanaged
+  one is echoed unchanged, and a new game's question is appended.
+- Given a hub without games Then every earlier plan, merge and apply test passes, the two
+  plan assertions on the onboarding op restated in its new shape with the same content.
+- Given games and a live project without `game`, or naming an unknown game When
+  `hub.json` loads Then it fails naming the project or the game.
+- Given games When `new forever-x --name "Forever X"` runs without `--game` Then it
+  exits 2 naming the games; with `--game wow-forever` the project is saved with it.
 
 ## Build-vs-adopt
 

@@ -55,11 +55,105 @@ function echoPrompt(p: SnapPrompt): PutPrompt {
   };
 }
 
+/** One question as the hub wants it, with role and channel ids resolved. */
+export interface DesiredPrompt {
+  title: string;
+  options: DesiredOption[];
+}
+
+/** Unicode emoji compared without U+FE0F, the presentation selector Discord may add or strip. */
+export function sameEmoji(a: string | null | undefined, b: string | null | undefined): boolean {
+  const bare = (s: string | null | undefined) => (s ?? '').replace(/️/g, '');
+  return bare(a) === bare(b);
+}
+
+/** Does a live option wear the emoji the hub wants: its custom emoji, else its unicode one, else none. */
+export function emojiInSync(have: { emoji_id?: string | null; emoji_name?: string | null }, want: { emoji?: string; emojiId?: string }): boolean {
+  if (want.emojiId) return have.emoji_id === want.emojiId;
+  return !have.emoji_id && sameEmoji(have.emoji_name, want.emoji);
+}
+
+function optionsInSync(target: SnapPrompt, desired: DesiredOption[]): boolean {
+  return (
+    target.options.length === desired.length &&
+    desired.every((want) => {
+      const have = target.options.find((o) => eqName(o.title, want.title));
+      return have !== undefined && emojiInSync(have, want) && sameSet(have.roleIds, want.roleIds) && sameSet(have.channelIds, want.channelIds);
+    })
+  );
+}
+
+/** The question to PUT: a live one keeps its id, settings and its options' ids (by title); a new one takes `id`. */
+function rebuild(target: SnapPrompt | undefined, want: DesiredPrompt, id: string): PutPrompt {
+  return {
+    id: target ? target.id : id,
+    title: target ? target.title : want.title,
+    type: target?.type ?? 0,
+    single_select: target?.single_select ?? false,
+    required: target?.required ?? false,
+    in_onboarding: target?.in_onboarding ?? true,
+    options: want.options.map((o) => {
+      const have = target?.options.find((x) => eqName(x.title, o.title));
+      const out: PutOption = { title: o.title, role_ids: [...o.roleIds], channel_ids: [...o.channelIds] };
+      if (have) out.id = have.id;
+      if (o.emojiId) out.emoji_id = o.emojiId;
+      else if (o.emoji) out.emoji_name = o.emoji;
+      if (o.description) out.description = o.description;
+      return out;
+    }),
+  };
+}
+
+/** Distinct placeholder ids for the new questions of one PUT: the base, then base+1, base+2 ... */
+function placeholder(base: string, n: number): string {
+  if (n === 0) return base;
+  return /^\d+$/.test(base) ? (BigInt(base) + BigInt(n)).toString() : `${base}-${n}`;
+}
+
 /**
- * Returns the full prompts array to PUT, or null when the target prompt already
- * matches `desired`. Other prompts are echoed verbatim; existing options keep their
- * ids; new options carry none; options absent from `desired` are dropped. A missing
- * prompt is created with `newPromptId` (ASM-01M4YRFMTAFAVY3TMZ72H5QP92).
+ * Returns the full prompts array to PUT, or null when every desired question matches, in the desired order,
+ * and no question to drop is live. The hub's questions - for each desired title, its FIRST live match - are
+ * written as one block in the desired order where the first of them stands (ids kept; questions not yet live
+ * get distinct placeholder ids: ASM-01M4YRFMTAFAVY3TMZ72H5QP92, ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2), or at the end
+ * when none is live; a question named in `drop` (and not desired) is left out; any other is echoed in place.
+ */
+export function mergePrompts(
+  current: SnapOnboarding,
+  desired: DesiredPrompt[],
+  drop: string[] = [],
+  newPromptId: string = String(Date.now()),
+): PutPrompt[] | null {
+  const managed = desired.map((w) => current.prompts.find((p) => eqName(p.title, w.title)));
+  const isManaged = (p: SnapPrompt) => managed.includes(p);
+  const dropped = (p: SnapPrompt) => !desired.some((w) => eqName(w.title, p.title)) && drop.some((d) => eqName(d, p.title));
+  const order = current.prompts.filter(isManaged).map((p) => managed.indexOf(p));
+  const inSync =
+    order.every((v, i) => i === 0 || order[i - 1] < v) &&
+    !current.prompts.some(dropped) &&
+    desired.every((w, i) => managed[i] !== undefined && optionsInSync(managed[i]!, w.options));
+  if (inSync) return null;
+
+  let n = 0;
+  const block = desired.map((w, i) => (managed[i] ? rebuild(managed[i], w, managed[i]!.id) : rebuild(undefined, w, placeholder(newPromptId, n++))));
+  const prompts: PutPrompt[] = [];
+  let placed = false;
+  for (const p of current.prompts) {
+    if (dropped(p)) continue;
+    if (isManaged(p)) {
+      if (!placed) prompts.push(...block);
+      placed = true;
+      continue;
+    }
+    prompts.push(echoPrompt(p));
+  }
+  if (!placed) prompts.push(...block);
+  return prompts;
+}
+
+/**
+ * One question: the full prompts array to PUT, or null when the target prompt already matches `desired`.
+ * Other prompts are echoed verbatim; existing options keep their ids; new options carry none; options absent
+ * from `desired` are dropped. A missing prompt is created with `newPromptId`.
  */
 export function mergeOnboarding(
   current: SnapOnboarding,
@@ -67,47 +161,5 @@ export function mergeOnboarding(
   desired: DesiredOption[],
   newPromptId: string = String(Date.now()),
 ): PutPrompt[] | null {
-  const target = current.prompts.find((p) => eqName(p.title, promptTitle));
-
-  if (target) {
-    const inSync =
-      target.options.length === desired.length &&
-      desired.every((want) => {
-        const have = target.options.find((o) => eqName(o.title, want.title));
-        const emojiMatch = want.emojiId ? have?.emoji_id === want.emojiId : want.emoji ? (have?.emoji_name ?? null) === want.emoji : true;
-        return have !== undefined && emojiMatch && sameSet(have.roleIds, want.roleIds) && sameSet(have.channelIds, want.channelIds);
-      });
-    if (inSync) return null;
-  }
-
-  const rebuilt: PutPrompt = {
-    id: target ? target.id : newPromptId,
-    title: target ? target.title : promptTitle,
-    type: target?.type ?? 0,
-    single_select: target?.single_select ?? false,
-    required: target?.required ?? false,
-    in_onboarding: target?.in_onboarding ?? true,
-    options: desired.map((want) => {
-      const have = target?.options.find((o) => eqName(o.title, want.title));
-      const out: PutOption = { title: want.title, role_ids: [...want.roleIds], channel_ids: [...want.channelIds] };
-      if (have) out.id = have.id;
-      if (want.emojiId) out.emoji_id = want.emojiId;
-      else if (want.emoji) out.emoji_name = want.emoji;
-      if (want.description) out.description = want.description;
-      return out;
-    }),
-  };
-
-  const prompts: PutPrompt[] = [];
-  let placed = false;
-  for (const p of current.prompts) {
-    if (target && p.id === target.id) {
-      prompts.push(rebuilt);
-      placed = true;
-    } else {
-      prompts.push(echoPrompt(p));
-    }
-  }
-  if (!placed) prompts.push(rebuilt);
-  return prompts;
+  return mergePrompts(current, [{ title: promptTitle, options: desired }], [], newPromptId);
 }

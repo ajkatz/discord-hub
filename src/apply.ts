@@ -10,7 +10,7 @@ import {
   type Overwrite,
 } from './discord.js';
 import { desiredFor, eqName, SHARED_CHANNELS, type GuildSnapshot, type Hub } from './model.js';
-import { mergeOnboarding, type DesiredOption } from './onboarding.js';
+import { mergePrompts, type DesiredPrompt } from './onboarding.js';
 import type { Op } from './plan.js';
 
 export interface ApplyResult {
@@ -149,15 +149,18 @@ export async function apply(ops: Op[], api: DiscordApi, hub: Hub, snapshot: Guil
           break;
         }
         case 'upsert-onboarding': {
-          const desired: DesiredOption[] = op.options.map((o) => ({
-            title: o.title,
-            emoji: o.emoji,
-            emojiId: o.emojiId,
-            roleIds: [res.role(o.role)],
-            channelIds: o.channels.map((name) => res.child(o.category, name)),
+          const desired: DesiredPrompt[] = op.prompts.map((p) => ({
+            title: p.title,
+            options: p.options.map((o) => ({
+              title: o.title,
+              emoji: o.emoji,
+              emojiId: o.emojiId,
+              roleIds: o.roles.map((name) => res.role(name)),
+              channelIds: o.channels.map((c) => res.child(c.category, c.name)),
+            })),
           }));
           const current = await api.getOnboarding(guildId);
-          const body = mergeOnboarding(current, op.promptTitle, desired);
+          const body = mergePrompts(current, desired, op.drop);
           if (body) {
             // Discord refuses onboarding edits unless >= 7 default channels (5 @everyone-writable)
             // are listed in the same request; the shared top-level set is exactly that.

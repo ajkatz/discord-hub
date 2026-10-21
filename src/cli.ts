@@ -9,9 +9,10 @@ const USAGE = `usage: discord-hub <command> [options]
 
 commands
   init                       ensure the shared channels + onboarding prompt, then every project
-  new <slug> --name <Name> [--emoji E | --icon icon.png] [--repo owner/repo]
+  new <slug> --name <Name> [--game <game>] [--emoji E | --icon icon.png] [--repo owner/repo]
                              add a project to hub.json and provision it; --icon uploads the
-                             image as a server emoji and uses it on the onboarding pick-list
+                             image as a server emoji and uses it on the onboarding pick-list;
+                             --game names its game, required when hub.json lists games
   plan                       print what apply would do (no changes)
   apply                      reconcile the guild with hub.json
   archive <slug>             drop the project from onboarding, rename its category
@@ -40,6 +41,7 @@ interface Args {
   emoji?: string;
   icon?: string;
   repo?: string;
+  game?: string;
 }
 
 export function parseArgs(argv: string[]): Args {
@@ -58,6 +60,7 @@ export function parseArgs(argv: string[]): Args {
       case '--emoji': args.emoji = takeValue(a, i++); break;
       case '--icon': args.icon = takeValue(a, i++); break;
       case '--repo': args.repo = takeValue(a, i++); break;
+      case '--game': args.game = takeValue(a, i++); break;
       case '--dry-run': args.dryRun = true; break;
       case '--shared': args.shared = true; break;
       case '--no-onboarding': args.noOnboarding = true; break;
@@ -141,7 +144,11 @@ export async function main(argv: string[], io = { out: console.log, err: console
       case 'new': {
         const slug = args.positional[0];
         if (!slug || !args.name) throw new UsageError('new needs <slug> and --name <Name>');
-        hub = addProject(hub, { slug, name: args.name, ...(args.emoji ? { emoji: args.emoji } : {}), ...(args.repo ? { repo: args.repo } : {}) });
+        const games = (hub.games ?? []).map((g) => g.slug);
+        if (games.length === 0 && args.game) throw new UsageError('--game: hub.json lists no games');
+        if (games.length > 0 && !args.game) throw new UsageError(`new needs --game <game>: hub.json lists games (${games.join(', ')})`);
+        if (args.game && !games.includes(args.game)) throw new UsageError(`--game ${args.game} is none of the games in hub.json (${games.join(', ')})`);
+        hub = addProject(hub, { slug, name: args.name, ...(args.emoji ? { emoji: args.emoji } : {}), ...(args.repo ? { repo: args.repo } : {}), ...(args.game ? { game: args.game } : {}) });
         saveHub(args.hub, hub);
         io.out(`added ${slug} to ${args.hub}`);
         break;

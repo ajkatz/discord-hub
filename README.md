@@ -8,7 +8,9 @@ Per project: a mentionable role, a private category visible to that role, `#anno
 questions and thanks: kind tags `bug idea question praise` plus status tags `acknowledged
 known in-progress fixed not-an-issue needs-info planned declined`), an announcer webhook,
 and an option in the server's onboarding prompt ("Which plugins do you use?") that grants
-the role.
+the role. Projects can be grouped by game: onboarding then asks "What do you play?" first,
+each game gets a role, a private category and a chat (`#osrs-chat`, `#wow-forever-chat`),
+and one plugin question follows per game (runbook section 3a).
 
 A resident bot (pi5) triages every new forum thread: Claude classifies it, the bot applies
 the tags (kind + `acknowledged`, or `known` with a link when it duplicates an open thread)
@@ -34,6 +36,7 @@ node bin/discord-hub.mjs init                                    # shared channe
 node bin/discord-hub.mjs new loadout-lab --name "Loadout Lab" --icon icon.png --repo ajkatz/runelite-loadout-lab
 node bin/discord-hub.mjs plan                                    # diff only
 node bin/discord-hub.mjs apply                                   # reconcile everything in hub.json
+node bin/discord-hub.mjs new forever-x --name "Forever X" --game wow-forever   # with games in hub.json
 node bin/discord-hub.mjs archive loadout-lab                     # drop from onboarding, rename category
 node bin/discord-hub.mjs apply --no-onboarding                   # build projects behind the wall; add the prompt later
 node bin/discord-hub.mjs plan --snapshot tests/fixtures/empty.json --hub tests/fixtures/hub.json   # offline

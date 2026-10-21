@@ -64,6 +64,32 @@ Re-running `new`, `apply` or `init` is safe: only what is missing gets created.
 `plan` always shows the diff first. `archive <slug>` removes the onboarding option and
 prefixes the category with `[archived]`; nothing is deleted.
 
+## 3a. Games: the game first, then its plugins
+
+With games listed in `hub.json`, onboarding asks the game first and each game's plugins
+after it (ADR-0004):
+
+```json
+"gamePrompt": "What do you play?",
+"games": [
+  { "slug": "osrs", "name": "Old School RuneScape", "chat": "osrs-chat", "prompt": "Which RuneLite plugins do you use?", "emoji": "🗡️" },
+  { "slug": "wow-forever", "name": "WoW: Forever", "chat": "wow-forever-chat", "prompt": "Which WoW: Forever addons do you use?", "emoji": "♾️" }
+]
+```
+
+Every live project then names its `game` (`new forever-x --name "Forever X" --game
+wow-forever`). `apply` builds per game a role (`@osrs`), a private category named after the
+game and its chat (`#osrs-chat`, where everyone with the role posts), and rewrites
+onboarding: "What do you play?" first (a game grants its role and its chat), then one
+question per game that has projects, each project's option granting its own role and
+channels. The single "Which plugins do you use?" question goes; a hub without games keeps
+it. To rename a question, change its title and put the old one in `retiredPrompts`: the hub
+only ever drops questions it knows by title.
+
+Members who joined before keep their project roles but get no game role until they pick
+their game in Channels & Roles. New game categories land at the
+bottom of the channel list: drag each above its projects.
+
 ## 4. Migrating the Loadout Lab and Goal Planner servers
 
 Discord cannot merge servers. In each old server: pin a message with the new invite,

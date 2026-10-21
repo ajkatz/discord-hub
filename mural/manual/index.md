@@ -23,6 +23,10 @@ ledger record, silent unless it links a duplicate.
   webhook in Discord.
 - **Onboarding has to be switched on by a human** after `init` (seven default channels,
   five writable); the CLI only maintains the prompt and its options.
+- **Games sit above the projects (ADR-0004).** With `games` in `hub.json` onboarding asks the
+  game first (it grants the game's role and chat) and each game's plugins after, and the
+  single question goes; a renamed question's old title goes in `retiredPrompts`. Without
+  games nothing changes.
 - **Archive renames, never deletes.** Nothing in the CLI or bot deletes a channel, role,
   thread or message.
 - **A tag you set by hand is final.** The bot records it and does not re-tag that thread.

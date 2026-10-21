@@ -137,6 +137,7 @@ export class FakeDiscordApi implements DiscordApi {
           roleIds: [...o.role_ids],
           channelIds: [...o.channel_ids],
           emoji_name: o.emoji_name ?? null,
+          emoji_id: o.emoji_id ?? null,
           description: o.description ?? null,
         })),
       })),

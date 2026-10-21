@@ -5,12 +5,15 @@
 - ADR-0001 — discord-hub seeded from the mural kernel template [active] (mural\decisions\0001-seeded-from-mural-kernel.md)
 - ADR-0002 — Triage runs as a resident gateway bot on pi5, not a scheduled poll [active] (mural\decisions\0002-triage-is-a-resident-bot-on-pi5.md)
 - ADR-0003 — Calibration breach — fix the measurement, add a live-iteration lane [draft] (mural\decisions\0003-calibration-breach-and-live-lane.md)
+- ADR-0004 — A game layer above the projects - a game question first, then one plugin question per game [active] (mural\decisions\0004-a-game-layer-above-the-projects.md)
 
 ## asm
 - ASM-01M4YRFMTAFAVY3TMZ72H5QP92 — New onboarding prompts accept a placeholder id and new options accept no id [validated] (mural\assumptions\ASM-01M4YRFMTAFAVY3TMZ72H5QP92-onboarding-new-prompt-placeholder-id.md)
+- ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2 — One onboarding PUT can create several new prompts with distinct placeholder ids and drop another [unvalidated] (mural\assumptions\ASM-01M5F0H4Y5DW3MRCQ0YSM51KJ2-several-new-onboarding-prompts-in-one-put.md)
 
 ## co
 - CO-01M50HBW4FGVWW46SFDG3SGP1B — PRD v3 -> v4 — reconcile the requirements with what shipped on 2026-10-14/15 [active] (mural\changes\CO-01M50HBW4FGVWW46SFDG3SGP1B-prd-v4-reconciliation.md)
+- CO-01M5F0H54AS18FWTB0WARMEZQC — PRD v4 -> v5 - the game layer above the projects (REQ-004, REQ-005, ADR-0004) [active] (mural\changes\CO-01M5F0H54AS18FWTB0WARMEZQC-prd-v5-the-game-layer.md)
 
 ## evergreen
 - DOC-borders — Blueprint — walls and cavities of discord-hub [active] (mural\engineering\borders.md)
@@ -45,6 +48,8 @@
 - ISS-01M50NYZ1380FBNRBGPTF4X2EP — announcer replays a missed push on demand [done] (mural\issues\ISS-01M50NYZ1380FBNRBGPTF4X2EP\spec.md)
 - ISS-01M50QB7KJS0363BAHA26Q2AM1 — announcer field batch - long commit lists, empty AI summaries, file lists from git, the project's icon [done] (mural\issues\ISS-01M50QB7KJS0363BAHA26Q2AM1\spec.md)
 - ISS-01M5EZHEM8H09W2WFTB1SB48R3 — announcer avatar falls back to the project's hub emoji [done] (mural\issues\ISS-01M5EZHEM8H09W2WFTB1SB48R3\spec.md)
+- ISS-01M5F0H5A8A4P1HP887ZBTM53C — games above projects - model, planner, onboarding prompts, applier [done] (mural\issues\ISS-01M5F0H5A8A4P1HP887ZBTM53C\spec.md)
+- ISS-01M5F0H5G5JP4RGQED9TAKEKSH — new --game, the runbook and the manual for the game layer [done] (mural\issues\ISS-01M5F0H5G5JP4RGQED9TAKEKSH\spec.md)
 
 ## playbook
 - DOC-armament — Armament table — the estimate picks the suit of armor [active] (mural\process\playbooks\armament.md)

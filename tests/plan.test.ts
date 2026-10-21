@@ -41,9 +41,12 @@ describe('plan against an empty guild', () => {
 
   it('carries one onboarding option for the project', () => {
     const ob = ops.find((o) => o.kind === 'upsert-onboarding');
-    expect(ob).toMatchObject({ promptTitle: 'Which plugins do you use?' });
-    expect(ob && ob.kind === 'upsert-onboarding' ? ob.options : []).toEqual([
-      { title: 'Loadout Lab', emoji: '🧪', role: 'loadout-lab', category: 'Loadout Lab', channels: ['announcements', 'general', 'feedback'] },
+    expect(ob).toMatchObject({ prompts: [{ title: 'Which plugins do you use?' }], drop: [] });
+    expect(ob && ob.kind === 'upsert-onboarding' ? ob.prompts[0].options : []).toEqual([
+      {
+        title: 'Loadout Lab', emoji: '🧪', roles: ['loadout-lab'],
+        channels: [{ category: 'Loadout Lab', name: 'announcements' }, { category: 'Loadout Lab', name: 'general' }, { category: 'Loadout Lab', name: 'feedback' }],
+      },
     ]);
   });
 
@@ -153,7 +156,7 @@ describe('plan for an archived project', () => {
     expect(ops.map((o) => o.kind)).toEqual(['rename-channel', 'upsert-onboarding']);
     const cat = snap.channels.find((c) => c.type === 4)!;
     expect(ops[0]).toMatchObject({ channelId: cat.id, name: '[archived] Loadout Lab' });
-    expect(ops[1]).toMatchObject({ options: [] });
+    expect(ops[1]).toMatchObject({ prompts: [{ title: 'Which plugins do you use?', options: [] }], drop: [] });
     expect(desiredFor(archived.projects[0]).categoryName).toBe('[archived] Loadout Lab');
   });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, copyFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, copyFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -83,6 +83,52 @@ describe('discord-hub new', () => {
     const r = run(['new', 'loadout-lab', '--name', 'Again', '--hub', hub, '--snapshot', SNAP]);
     expect(r.code).toBe(1);
     expect(r.err).toMatch(/loadout-lab/);
+  });
+});
+
+describe('discord-hub new with games (ADR-0004)', () => {
+  const gamesHub = () => {
+    const hub = join(mkdtempSync(join(tmpdir(), 'hub-')), 'hub.json');
+    writeFileSync(hub, JSON.stringify({
+      guildId: '100000000000000001',
+      onboardingPrompt: 'Which plugins do you use?',
+      gamePrompt: 'What do you play?',
+      games: [
+        { slug: 'osrs', name: 'Old School RuneScape', chat: 'osrs-chat', prompt: 'Which RuneLite plugins do you use?' },
+        { slug: 'wow-forever', name: 'WoW: Forever', chat: 'wow-forever-chat', prompt: 'Which WoW: Forever addons do you use?' },
+      ],
+      projects: [{ slug: 'loadout-lab', name: 'Loadout Lab', game: 'osrs' }],
+    }));
+    return hub;
+  };
+
+  it('needs --game naming one of the games, and saves nothing otherwise', () => {
+    const hub = gamesHub();
+    let r = run(['new', 'forever-x', '--name', 'Forever X', '--hub', hub, '--snapshot', SNAP]);
+    expect(r.code).toBe(2);
+    expect(r.err).toMatch(/--game/);
+    expect(r.err).toMatch(/osrs, wow-forever/);
+    r = run(['new', 'forever-x', '--name', 'Forever X', '--game', 'eve', '--hub', hub, '--snapshot', SNAP]);
+    expect(r.code).toBe(2);
+    expect(r.err).toMatch(/eve/);
+    expect(JSON.parse(readFileSync(hub, 'utf8')).projects).toHaveLength(1);
+  });
+
+  it('saves the project with its game and plans it under that game', () => {
+    const hub = gamesHub();
+    const r = run(['new', 'forever-x', '--name', 'Forever X', '--game', 'wow-forever', '--hub', hub, '--snapshot', SNAP]);
+    expect(r.code, r.err).toBe(0);
+    expect(JSON.parse(readFileSync(hub, 'utf8')).projects[1]).toMatchObject({ slug: 'forever-x', game: 'wow-forever' });
+    expect(r.out).toMatch(/create private category "WoW: Forever"/);
+    expect(r.out).toMatch(/"Which WoW: Forever addons do you use\?" -> \[Forever X\]/);
+  });
+
+  it('refuses --game when hub.json lists no games', () => {
+    const hub = join(mkdtempSync(join(tmpdir(), 'hub-')), 'hub.json');
+    copyFileSync(HUB, hub);
+    const r = run(['new', 'goal-planner', '--name', 'Goal Planner', '--game', 'osrs', '--hub', hub, '--snapshot', SNAP]);
+    expect(r.code).toBe(2);
+    expect(r.err).toMatch(/no games/);
   });
 });
 
