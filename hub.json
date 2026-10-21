@@ -71,6 +71,12 @@
       "emoji": "📡",
       "repo": "ajkatz/AKForeverLFGRadar",
       "emojiId": "1562251272340508793"
+    },
+    {
+      "slug": "forever-alt-mailer",
+      "name": "Forever Alt Mailer",
+      "repo": "ajkatz/AKForeverAltMailer",
+      "emojiId": "1562352222107475988"
     }
   ]
 }
