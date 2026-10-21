@@ -14,12 +14,15 @@
 //   GITHUB_WORKSPACE     (set by Actions)     repo root (for git commands)
 //   PROJECT_NAME         (optional)           display name; default: repo name
 //   PROJECT_DESCRIPTION  (optional)           one line about the project for the summary
-//   PROJECT_ICON_URL     (optional)           avatar for the post; default: the repo's icon.png
+//   PROJECT_ICON_URL     (optional)           avatar for the post; default: the repo's icon.png,
+//                                             else the project's emoji in hub.json
+//   HUB_JSON             (optional)           hub.json for that emoji; default: this checkout's own
 //   REPLAY_FROM          (optional)           make-up run: announce the commits after this ref
 //   REPLAY_TO            (optional)           ...up to this ref (default HEAD); needs REPLAY_FROM
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ZERO_SHA = "0000000000000000000000000000000000000000";
@@ -339,14 +342,34 @@ const embed = {
 };
 
 // The post wears the project's icon (Andrew, 2026-10-15): an explicit URL, else
-// the repo's own icon.png at the announced commit when git has it there.
+// the repo's own icon.png at the announced commit when git has it there, else the
+// project's custom emoji on the hub (Andrew, 2026-10-21: "announcements for forever
+// addons aren't announcing with the icon as the avatar" - they carry only icon.tga).
 function iconUrl() {
   if (process.env.PROJECT_ICON_URL) return process.env.PROJECT_ICON_URL;
+  return repoIconUrl() ?? hubEmojiUrl();
+}
+
+function repoIconUrl() {
   const html = event.repository?.html_url ?? "";
   if (!html || after === ZERO_SHA) return undefined;
   try {
     git("cat-file", "-e", `${after}:icon.png`);
     return `https://raw.githubusercontent.com/${repoFullName}/${after}/icon.png`;
+  } catch {
+    return undefined;
+  }
+}
+
+// The project whose repo this is, by its emoji in hub.json (the one at the root of
+// the announcer's own checkout); none, or no readable hub: no avatar.
+function hubEmojiUrl() {
+  const path = process.env.HUB_JSON || fileURLToPath(new URL("../hub.json", import.meta.url));
+  try {
+    const hub = JSON.parse(readFileSync(path, "utf8"));
+    const wanted = repoFullName.toLowerCase();
+    const project = (hub.projects ?? []).find((p) => typeof p.repo === "string" && p.repo.toLowerCase() === wanted);
+    return project?.emojiId ? `https://cdn.discordapp.com/emojis/${project.emojiId}.png` : undefined;
   } catch {
     return undefined;
   }

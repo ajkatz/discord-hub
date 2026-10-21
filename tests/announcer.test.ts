@@ -259,6 +259,33 @@ describe('announcer replay', () => {
     expect(posts[0].avatar_url).toBe(`https://raw.githubusercontent.com/AKAddons/demo/${withIcon}/icon.png`);
   });
 
+  it('without an icon.png it wears the project emoji from hub.json (the WoW addons carry only icon.tga); no project or no hub: no avatar, still posted', async () => {
+    const hub = join(work, 'hub.json');
+    writeFileSync(hub, JSON.stringify({ guildId: '1', onboardingPrompt: 'Which plugins do you use?', projects: [
+      { slug: 'other', name: 'Other', repo: 'AKAddons/other', emojiId: '999' },
+      { slug: 'demo', name: 'Demo', repo: 'akaddons/DEMO', emojiId: '1234' },
+    ] }));
+    let r = await run(base, head, { HUB_JSON: hub });
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(posts[0].avatar_url).toBe('https://cdn.discordapp.com/emojis/1234.png');
+
+    const withIcon = commit('chore: a new icon', { 'icon.png': 'a different not-png' });
+    r = await run(base, withIcon, { HUB_JSON: hub });
+    expect(posts[0].avatar_url, 'an icon.png at the commit still wins').toBe(`https://raw.githubusercontent.com/AKAddons/demo/${withIcon}/icon.png`);
+
+    const otherHub = join(work, 'hub-other.json');
+    writeFileSync(otherHub, JSON.stringify({ guildId: '1', onboardingPrompt: 'x', projects: [{ slug: 'other', name: 'Other', repo: 'AKAddons/other', emojiId: '999' }] }));
+    r = await run(base, head, { HUB_JSON: otherHub });
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(posts).toHaveLength(1);
+    expect(posts[0].avatar_url).toBeUndefined();
+
+    r = await run(base, head, { HUB_JSON: join(work, 'no-such-hub.json') });
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(posts).toHaveLength(1);
+    expect(posts[0].avatar_url).toBeUndefined();
+  });
+
   it('stays quiet when the range is empty', async () => {
     const r = await run(head, head);
     expect(r.status, r.stdout + r.stderr).toBe(0);
