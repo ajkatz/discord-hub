@@ -121,6 +121,13 @@
       "repo": "ajkatz/AKForeverAutoInviter",
       "game": "wow-forever",
       "emojiId": "1563090347301798008"
+    },
+    {
+      "slug": "brainless-molanisk",
+      "name": "Brainless Molanisk",
+      "repo": "ajkatz/runelite-brainless-molanisk",
+      "game": "osrs",
+      "emojiId": "1563097364582109280"
     }
   ]
 }
