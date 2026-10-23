@@ -114,6 +114,13 @@
       "repo": "ajkatz/AKForeverAltMailer",
       "emojiId": "1562541295321489582",
       "game": "wow-forever"
+    },
+    {
+      "slug": "forever-auto-inviter",
+      "name": "Forever Auto Inviter",
+      "repo": "ajkatz/AKForeverAutoInviter",
+      "game": "wow-forever",
+      "emojiId": "1563090347301798008"
     }
   ]
 }
