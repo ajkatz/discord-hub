@@ -128,6 +128,13 @@
       "repo": "AKAddons/runelite-brainless-molanisk",
       "game": "osrs",
       "emojiId": "1563098248154062868"
+    },
+    {
+      "slug": "forever-recipes",
+      "name": "Forever Recipes",
+      "repo": "ajkatz/AKForeverRecipes",
+      "game": "wow-forever",
+      "emojiId": "1569857421738778654"
     }
   ]
 }
